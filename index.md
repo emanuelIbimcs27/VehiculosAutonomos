@@ -10,5 +10,4 @@ Este repositorio será nuestra página del curso: aquí se documentan todas las 
 
 
 Contenido:
-- [1. Matlab Qcar Sensores](02-estructura-del-repo.md)
-
+- [1. Matlab Qcar Sensores](01-publicar-en-github-pages.md)
