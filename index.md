@@ -10,5 +10,5 @@ Este repositorio será nuestra página del curso: aquí se documentan todas las 
 
 
 Contenido:
-- [1. Equipo de computo con presupuesto](02-estructura-del-repo.md)
-- [2. Sistemas Embebidos](01-publicar-en-github-pages.md)
+- [1. Matlab Qcar Sensores](02-estructura-del-repo.md)
+
