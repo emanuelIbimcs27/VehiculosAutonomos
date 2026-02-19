@@ -1,4 +1,4 @@
-# CPS IoT Self-Driving Competition — Team [Team Name]
+# CPS IoT Self-Driving Competition — Team Autonomous Wolf
 
 ## Context
 
