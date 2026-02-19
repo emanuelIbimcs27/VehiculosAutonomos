@@ -93,8 +93,8 @@ $$
 
 Where:
 
-- $\omega_L$  is the angular velocitry from Left qcar wheel
-- $\omega_R$  is the angular velocitry from Right qcar wheel
+- $\omega_L$  is the angular velocity from Left qcar wheel
+- $\omega_R$  is the angular velocity from Right qcar wheel
 - $v$ is the longitudinal velocity obtained from the encoder  
 - $L$ is the wheelbase length  
 - $\delta$ is the steering angle  
