@@ -16,8 +16,8 @@ In this initial phase, we focus on:
   - Lidar  
   - IMU  
   - Wheel encoder  
-  - Depth camera  
-  - RGB fisheye cameras  
+  - RGBD camera  
+  
 - Implementing a bicycle kinematic model  
 - Comparing different yaw (heading) estimation methods  
 - Estimating vehicle pose using wheel odometry  
