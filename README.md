@@ -104,6 +104,45 @@ This model allows the estimation of the vehicle pose $(x, y, \psi)$.
 
 ---
 
+## Heading and Pose Comparison
+
+The following figure shows the comparison between IMU and Lidar heading estimation
+
+![Heading Comparison](assets/img/theta_comparison.jpg)
+
+The following figure shows the comparison between Kinematic Model and Lidar X car position estimation
+
+![Pose X Comparison](assets/img/x_comparison.png)
+
+The following figure shows the comparison between Kinematic Model and Lidar Y car position estimation
+
+![Pose Y Comparison](assets/img/y_comparison.png)
+
+Also, the following figures show the real-time RGB and Depth frames obtained from the stereo camera.
+
+It is important to note that, for visualization purposes, the Depth frame was normalized before being displayed. The normalization process is described below.
+
+### Depth Frame Normalization
+
+The depth image was normalized to the range [0, 1] using the following MATLAB function:
+
+```matlab
+function out = normalizeDepth(depth)
+
+dmin = min(depth(:));
+dmax = max(depth(:));
+
+out = (depth - dmin) / (dmax - dmin);
+
+end
+```
+
+![RGB frame](assets/img/depth frame.png)
+
+![Depth frame](assets/img/rgb frame.png)
+
+This normalization improves contrast and allows better visualization of relative depth variations in the scene.
+
 ## Preliminary Results
 
 - The IMU shows cumulative drift in heading estimation.  
