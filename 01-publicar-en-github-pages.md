@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Vehículos Autónomos Qcar
+title: Matlab Qcar Sensores
 nav_order: 3
 has_children: true
 permalink: /sistemas-embebidos/
