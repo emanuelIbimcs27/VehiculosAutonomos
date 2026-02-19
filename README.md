@@ -8,7 +8,7 @@ We are currently in the **virtual stage**, where the main objective is to valida
 
 ---
 
-## Objective of the Current Milestone
+## Objectives 
 
 In this initial phase, we focus on:
 
