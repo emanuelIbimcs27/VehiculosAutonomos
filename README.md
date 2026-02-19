@@ -1,141 +1,130 @@
-# Plantilla Just the Docs
-kks
-Esta es una **plantilla de documentación** basada en **Just the Docs** (Jekyll) para que tus alumnos puedan:
+# CPS IoT Self-Driving Competition — Team [Team Name]
 
-- copiar un repositorio (Fork),
-- editar contenido en **Markdown**,
-- trabajar **en línea con GitHub Codespaces** (sin instalar nada),
-- publicar su sitio en **GitHub Pages**,
-- y mantener una estructura y estilos consistentes (logo/colores/footer).
+## Context
+
+This repository documents the development of our autonomous driving algorithm for the CPS IoT Self-Driving Car Competition, using the Quanser QCar 2 platform in the virtual QLabs environment.
+
+We are currently in the **virtual stage**, where the main objective is to validate our perception system and state estimation before moving to the full implementation of the autonomous navigation algorithm.
 
 ---
 
-## Requisitos
+## Objective of the Current Milestone
 
-- Cuenta de **GitHub** (gratuita).
-- Permiso para usar **GitHub Pages** y **Codespaces** (según tu cuenta/organización).
+In this initial phase, we focus on:
 
-> En este curso trabajamos **solo con GitHub Pages + Codespaces**. No es necesario instalar Ruby/Jekyll localmente.
+- Validating QCar sensor readings:
+  - Lidar  
+  - IMU  
+  - Wheel encoder  
+  - Depth camera  
+  - RGB fisheye cameras  
+- Implementing a bicycle kinematic model  
+- Comparing different yaw (heading) estimation methods  
+- Estimating vehicle pose using wheel odometry  
 
----
-
-## Inicio rápido: Fork + Codespaces + GitHub Pages
-
-### 1) Copia el repositorio (Fork)
-
-1. Abre el repositorio base (el que te comparte el profesor).
-2. Clic en **Fork** → **Create fork**.
-3. Revisa que estés en tu repositorio (debe estar bajo tu usuario u organización).
-
----
-
-### 2) Abre el proyecto en Codespaces (sin instalar nada)
-
-En tu repositorio:
-
-1. Clic en **Code** → pestaña **Codespaces** → **Create codespace on main**.
-2. Espera a que cargue VS Code en el navegador.
+This step is essential to ensure reliable state estimation before implementing path planning and control strategies.
 
 ---
 
-### 3) Configura la URL en `_config.yml` (obligatorio)
+## Simulink Model Architecture
 
-Abre `_config.yml` y ajusta:
+The model developed in MATLAB/Simulink includes the following components:
 
-```yml
-url: "https://TU_USUARIO.github.io"
-baseurl: "/TU_REPO"
-```
+### 1. Sensor Acquisition Module
 
-Ejemplo:
+Real-time data is obtained from the QLabs environment:
 
-- Usuario: `ana-ibero`
-- Repo: `documentacion-equipo-3`
-
-```yml
-url: "https://ana-ibero.github.io"
-baseurl: "/documentacion-equipo-3"
-```
-
-> Si `baseurl` no coincide con el nombre del repo, los enlaces/estilos pueden fallar.
+- IMU → linear acceleration and angular velocity  
+- Lidar → point cloud data  
+- Encoder → wheel angular velocity  
+- Cameras → visual perception  
 
 ---
 
-### 4) Haz tu primer cambio y súbelo (Commit + Push)
+### 2. Heading (Yaw) Estimation
 
-En Codespaces:
+Two methods are compared:
 
-1. Edita un archivo (por ejemplo `index.md`).
-2. Abre **Source Control** (ícono de rama).
-3. Escribe un mensaje y haz **Commit**.
-4. Haz **Sync Changes / Push**.
+**Method 1 — IMU**
 
-Flujo esperado: **editar → commit → push → se ejecuta Actions → se publica Pages**.
+$$
+\psi_{imu}(t) = \int \omega_z \, dt
+$$
 
----
+**Method 2 — Lidar**
 
-### 5) Activa GitHub Pages (solo una vez)
+Estimation based on environment geometry and alignment with map references.
 
-En GitHub (en tu repositorio):
-
-1. **Settings** → **Pages**
-2. **Build and deployment**
-   - Source: **Deploy from a branch**
-   - Branch: `main`
-   - Folder: `/ (root)`
-3. Guarda.
-
-Tu URL quedará así:
-
-`https://TU_USUARIO.github.io/TU_REPO/`
+The drift of the IMU-based heading is analyzed and compared with the geometric estimation from Lidar.
 
 ---
 
-### 6) Verifica que ya se publicó (Actions)
+### 3. Bicycle Kinematic Model
 
-1. Ve a la pestaña **Actions**.
-2. Abre el workflow de Pages (por ejemplo “pages build and deployment”).
-3. Espera a que esté en **verde (success)**.
-4. Abre la URL desde **Settings → Pages**.
+The following model was implemented:
 
-Tip: si no ves cambios, fuerza recarga del navegador (hard refresh):
-- Windows: `Ctrl + F5`
-- macOS: `Cmd + Shift + R`
+$$
+\dot{x} = v \cos(\psi)
+$$
 
----
+$$
+\dot{y} = v \sin(\psi)
+$$
 
-## Dónde editar y dónde poner archivos
+$$
+\dot{\psi} = \frac{v}{L} \tan(\delta)
+$$
 
-- Contenido (páginas): archivos `*.md` en la raíz del repo.
-- Imágenes: `assets/img/`
-- PDFs u otros descargables: `assets/files/`
-- Videos MP4 (si los usas): `assets/videos/`
+Where:
 
----
+- $v$ is the longitudinal velocity obtained from the encoder  
+- $L$ is the wheelbase length  
+- $\delta$ is the steering angle  
+- $\psi$ is the heading angle  
 
-## Contenido del mini-curso (dentro del sitio)
-
-- **Inicio**: `index.md`
-- **Tema 1 — Publicar en GitHub Pages**: `01-publicar-en-github-pages.md`
-- **Tema 2 — Estructura del repositorio**: `02-estructura-del-repo.md`
-- **Tema 3 — Escribir en Markdown**: `03-markdown.md`
-- **Tema 4 — Estilos y personalización visual**: `04-estilos.md`
+This model allows the estimation of the vehicle pose $(x, y, \psi)$.
 
 ---
 
-## Personalización rápida (logo/colores/footer)
+## Preliminary Results
 
-- Logo: `assets/img/logotipo.png`
-- Favicon: `assets/img/favicon.ico`
-- CSS: `assets/css/custom.css`
-- Head: `_includes/head_custom.html`
-- Footer: `_includes/footer_custom.html`
-
-> Recomendación para clase: conserva nombres y rutas, y solo reemplaza los archivos de imagen y los colores del CSS.
+- The IMU shows cumulative drift in heading estimation.  
+- The Lidar-based estimation is more stable but depends on the environment structure.  
+- Future sensor fusion will be necessary to improve robustness.  
+- The bicycle model odometry can reconstruct consistent trajectories in controlled scenarios.
 
 ---
 
-## Licencia
+## Next Steps
 
-Define la licencia que usarás para el contenido (por ejemplo **MIT**, **CC BY 4.0**, etc.).  
-Este repositorio puede incluir ejemplos de licencia en el footer. Ajusta texto/enlaces según tu política del curso.
+- Implement sensor fusion (EKF or similar method)  
+- Integrate map-based localization  
+- Implement trajectory planning  
+- Design a controller for autonomous taxi navigation  
+
+---
+
+## Current Status
+
+- Sensor validation completed  
+- Yaw estimation comparison completed  
+- Bicycle kinematic model implemented  
+- Pending: sensor fusion and control design  
+
+---
+
+## Tools Used
+
+- MATLAB  
+- Simulink  
+- QLabs  
+- Quanser QCar 2 platform  
+
+---
+
+## Competition
+
+We participate in the CPS IoT Self-Driving Car Competition, where the final goal is to implement an autonomous taxi system capable of maximizing profit in both simulated and physical urban environments.
+
+
+
