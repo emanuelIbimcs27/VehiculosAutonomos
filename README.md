@@ -37,7 +37,7 @@ Real-time data is obtained from the QLabs environment:
 - IMU : linear acceleration and angular velocity  
 - Lidar : point cloud data through polar and cartesian graphics
 - Encoder : wheel angular velocity  
-- Cameras : visual perception  of depth camera and RGB's cameras using Frame Viewer block from Computer Vision Toolbox
+- Cameras : visual perception of depth and RGB frame using Frame Viewer block from Computer Vision Toolbox
 
 ---
 
