@@ -145,9 +145,9 @@ out = (depth - dmin) / (dmax - dmin);
 end
 ```
 
-![RGB frame](assets/img/depth%20frame.png)
+![RGB frame](assets/img/depth frame.png)
 
-![Depth frame](assets/img/rgb%20frame.png)
+![Depth frame](assets/img/rgb frame.png)
 
 This normalization improves contrast and allows better visualization of relative depth variations in the scene.
 
