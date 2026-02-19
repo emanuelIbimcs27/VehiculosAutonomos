@@ -132,6 +132,12 @@ It is important to note that, for visualization purposes, the Depth frame was no
 
 ### Depth Frame Normalization
 
+The camera outputs 640x480 resolution images with a 3-channel RGB frame and a 1-channel depth frame.
+
+![Simulink Block Architecture](assets/img/RealSense_Simulink.png)
+
+As shown in the image above, each camera provides the image number, timestamp, and a flag indicating when a new image is captured.
+
 The depth image was normalized to the range [0, 1] using the following MATLAB function:
 
 ```matlab
