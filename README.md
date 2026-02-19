@@ -183,5 +183,12 @@ This normalization improves contrast and allows better visualization of relative
 
 We participate in the CPS IoT Self-Driving Car Competition, where the final goal is to implement an autonomous taxi system capable of maximizing profit in both simulated and physical urban environments.
 
+## Simulink Model
+
+The complete sensor validation model can be found in:
+
+`/simulink/qcar_sensor_validation.slx`
+
+
 
 
