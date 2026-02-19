@@ -34,22 +34,34 @@ The model developed in MATLAB/Simulink includes the following components:
 
 Real-time data is obtained from the QLabs environment:
 
-- IMU → linear acceleration and angular velocity  
-- Lidar → point cloud data  
-- Encoder → wheel angular velocity  
-- Cameras → visual perception  
+- IMU : linear acceleration and angular velocity  
+- Lidar : point cloud data through polar and cartesian graphics
+- Encoder : wheel angular velocity  
+- Cameras : visual perception  of depth camera and RGB's cameras using Frame Viewer block from Computer Vision Toolbox
 
 ---
 
 ### 2. Heading (Yaw) Estimation
 
 Two methods are compared:
+**Method 1 — IMU (IMU Filter, Navigation Toolbox)**
 
-**Method 1 — IMU**
+The heading angle is estimated using the *IMU Filter* block from the Navigation Toolbox in Simulink.
+
+This block performs sensor fusion using:
+
+- 3-axis accelerometer data  
+- 3-axis gyroscope data  
+
+The filter estimates the full orientation of the vehicle and outputs the yaw angle from the estimated quaternion or Euler angles representation.
+
+Unlike direct gyroscope integration,
 
 $$
-\psi_{imu}(t) = \int \omega_z \, dt
+\psi(t) = \int \omega_z \, dt
 $$
+
+the IMU Filter reduces drift by combining angular velocity and acceleration measurements.
 
 **Method 2 — Lidar**
 
@@ -62,6 +74,10 @@ The drift of the IMU-based heading is analyzed and compared with the geometric e
 ### 3. Bicycle Kinematic Model
 
 The following model was implemented:
+
+$$
+v = \frac{r}{2} \left( \omega_L + \omega_R \right)
+$$
 
 $$
 \dot{x} = v \cos(\psi)
@@ -77,6 +93,8 @@ $$
 
 Where:
 
+- $\omega_L$  is the angular velocitry from Left qcar wheel
+- $\omega_R$  is the angular velocitry from Right qcar wheel
 - $v$ is the longitudinal velocity obtained from the encoder  
 - $L$ is the wheelbase length  
 - $\delta$ is the steering angle  
