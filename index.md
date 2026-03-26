@@ -1,13 +1,12 @@
 ---
 layout: default
-title: Inicio
+title: Home
 nav_order: 1
 ---
+# Spring 2026 Labs: Cyber-Physical Systems
 
-# Prácticas Primavera 2026: Sistemas Ciberfísicos
+This repository will be our course page: all the labs conducted in the Cyber-Physical Systems course are documented here, including the development, methodology, and evidence of the results obtained during the Spring 2026 semester.
 
-Este repositorio será nuestra página del curso: aquí se documentan todas las prácticas realizadas en la materia de Sistemas Ciberfísicos, incluyendo el desarrollo, la metodología y las evidencias de los resultados obtenidos durante el semestre de primavera 2026.
+Contents:
 
-
-Contenido:
-- [1. Matlab Qcar Sensores](01-publicar-en-github-pages.md)
+  - [1. Matlab Qcar Sensors](https://www.google.com/search?q=01-publicar-en-github-pages.md)
