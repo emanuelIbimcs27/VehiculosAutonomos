@@ -1,5 +1,5 @@
 ---
 layout: default
-title: Interfaz de Usuario
+title: SLAM
 nav_order: 4
 ---
