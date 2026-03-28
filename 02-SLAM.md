@@ -1862,3 +1862,1017 @@ function [steering_out, direction]= avoidCone(steering_in, detections, t)
     end
 end
 ```
+## 8. Activación de direccionales a partir de reglas viales basadas en nodos
+
+Además de seguir una trayectoria global y reaccionar ante señales y obstáculos, el vehículo autónomo también debe reproducir comportamientos de conducción más realistas desde el punto de vista vial. Uno de ellos es el uso correcto de las direccionales. Para ello se diseñó un módulo adicional cuya función es identificar, a partir de la secuencia de nodos de la ruta planeada, en qué tramos debe encenderse la direccional izquierda y en cuáles debe encenderse la direccional derecha.
+
+La lógica general de este módulo consiste en transformar reglas discretas del tipo “del nodo 7 al nodo 8 encender direccional izquierda” en segmentos reales sobre la trayectoria suavizada. Es decir, la ruta óptima ya no se usa únicamente como referencia geométrica, sino también como base para activar comportamientos viales coherentes con la maniobra que el vehículo está ejecutando en cada parte del circuito.
+
+### 8.1 Objetivo del módulo
+
+El propósito de este script es crear dos conjuntos de intervalos sobre la trayectoria:
+
+- segmentos donde la direccional izquierda debe estar activa,
+- segmentos donde la direccional derecha debe estar activa.
+
+Si se denota la trayectoria suavizada como una secuencia de puntos:
+
+$$
+\mathcal{P} = \{(x_1,y_1), (x_2,y_2), \dots, (x_M,y_M)\}
+$$
+
+entonces el objetivo del algoritmo es construir dos subconjuntos de índices:
+
+$$
+\mathcal{S}_{izq} = \{[a_1,b_1], [a_2,b_2], \dots\}
+$$
+
+$$
+\mathcal{S}_{der} = \{[c_1,d_1], [c_2,d_2], \dots\}
+$$
+
+donde cada intervalo indica un tramo continuo de la trayectoria sobre el cual debe permanecer activa una direccional.
+
+### 8.2 Mapeo entre nodos del grafo y puntos de la trayectoria suavizada
+
+La trayectoria global final no está formada únicamente por nodos discretos, sino por una curva suavizada compuesta por muchos puntos interpolados. Por esta razón, antes de poder activar una direccional entre dos nodos específicos, es necesario encontrar qué índices de la trayectoria suavizada corresponden mejor a esos nodos.
+
+El código utilizado fue:
+
+```matlab
+%% =============================
+% MAPEO NODOS → INDICES EN TRAYECTORIA
+% =============================
+
+num_nodes_path = length(pathNodes_corrected);
+node_to_idx = zeros(num_nodes_path,1);
+
+search_start = 1; % clave: evita ambigüedades
+AUX = 48;
+
+for k = 1:num_nodes_path
+    
+    nodo_id = pathNodes_corrected(k);
+    nodo_xy = nodes(nodo_id,:);
+    
+    min_dist = inf;
+    best_idx = search_start;
+    
+    for i = search_start:length(path_x_smooth)
+        
+        dx = path_x_smooth(i) - nodo_xy(1);
+        dy = path_y_smooth(i) - nodo_xy(2);
+        d = dx^2 + dy^2; % sin sqrt (más rápido)
+        
+        if d < min_dist
+            min_dist = d;
+            best_idx = i;
+        end
+    end
+    
+    node_to_idx(k) = best_idx;
+    search_start = best_idx; % solo busca hacia adelante
+end
+```
+
+### 8.3 Interpretación matemática del mapeo
+
+Para cada nodo corregido \(v_k = (x_k^{node}, y_k^{node})\), el script busca el punto de la trayectoria suavizada más cercano en distancia cuadrática. Matemáticamente, esto equivale a calcular:
+
+$$
+i_k^\star = \arg\min_{i \ge i_{k-1}^\star}
+\left[
+(x_i^{smooth} - x_k^{node})^2 + (y_i^{smooth} - y_k^{node})^2
+\right]
+$$
+
+donde:
+
+- \(i_k^\star\) es el índice de la trayectoria suavizada asociado al nodo \(k\),
+- \((x_i^{smooth}, y_i^{smooth})\) es el punto \(i\) de la trayectoria interpolada.
+
+El uso de la distancia cuadrática en vez de la distancia euclidiana completa:
+
+$$
+d^2 = (x_i - x_k)^2 + (y_i - y_k)^2
+$$
+
+es completamente válido para comparación de cercanía, y además es computacionalmente más eficiente porque evita calcular raíces cuadradas en cada iteración.
+
+### 8.4 Importancia del parámetro `search_start`
+
+Una decisión muy importante de este módulo es el uso de la variable:
+
+```matlab
+search_start = best_idx;
+```
+
+Esto significa que, una vez localizado el índice correspondiente a un nodo, el siguiente nodo solo puede buscarse hacia adelante en la trayectoria. Esa restricción evita ambigüedades en curvas cerradas o regiones donde la trayectoria pasa cerca de puntos ya visitados. Desde el punto de vista de consistencia topológica, esto fuerza a que el mapeo nodo → índice respete el orden real de avance del vehículo sobre la ruta.
+
+En otras palabras, el algoritmo impone una relación monótona:
+
+$$
+i_1^\star \le i_2^\star \le i_3^\star \le \dots
+$$
+
+lo cual es exactamente lo que se desea cuando los nodos describen una secuencia de recorrido.
+
+### 8.5 Uso del nodo auxiliar `AUX = 48`
+
+El script introduce explícitamente:
+
+```matlab
+AUX = 48;
+```
+
+Este nodo auxiliar representa el punto central de la intersección, el mismo que fue utilizado previamente para suavizar ciertos cruces izquierdos. Su función aquí es muy importante: permite descomponer maniobras complejas de giro a la izquierda en dos segmentos más controlables. En lugar de modelar un cruce izquierdo agresivo como una conexión directa entre dos nodos extremos, se hace pasar la maniobra por el nodo central de la intersección.
+
+Geométricamente, esto mejora la calidad de la regla vial, porque la direccional queda asociada a un arco de giro más realista y no solo a un salto discreto entre dos puntos lejanos del mapa.
+
+### 8.6 Definición de reglas de direccionales
+
+Una vez definido el mapeo entre nodos y trayectoria, se establecen las reglas de activación de direccionales. En tu implementación, las reglas quedaron así:
+
+#### Reglas de direccional derecha
+
+```matlab
+der = [9 41; 13 46; 15 45; 17 18; 23 16; 26 27; 27 28;
+       31 25; 39 40; 40 41; 41 42; 44 32; 45 3];
+```
+
+#### Reglas de direccional izquierda
+
+```matlab
+izq = [7 8; 8 9; 15 AUX; AUX 24; 17 6; 23 AUX; AUX 32; 
+       27 7; 31 AUX; AUX 45; 44 AUX; AUX 16];
+```
+
+Estas reglas codifican conocimiento vial directamente sobre la topología del mapa. Por ejemplo:
+
+- `7 8 -> izquierda` significa que del nodo 7 al nodo 8 el vehículo debe mantener encendida la direccional izquierda.
+- `9 41 -> derecha` significa que en ese segmento el vehículo ejecuta una maniobra que debe ir acompañada de direccional derecha.
+- `15 AUX` y `AUX 24` representan una maniobra de cruce izquierdo descompuesta en dos segmentos a través del nodo central de intersección.
+
+### 8.7 Construcción de segmentos de trayectoria con direccionales activas
+
+Después de definir las reglas, el script recorre la secuencia completa de nodos corregidos y genera intervalos de índices sobre la trayectoria suavizada:
+
+```matlab
+%% =============================
+% CREAR SEGMENTOS
+% =============================
+
+segmentos_izq = [];
+segmentos_der = [];
+
+for k = 1:length(pathNodes_corrected)-1
+    
+    n1 = pathNodes_corrected(k);
+    n2 = pathNodes_corrected(k+1);
+    
+    idx1 = node_to_idx(k);
+    idx2 = node_to_idx(k+1);
+    
+    segmento = [min(idx1,idx2), max(idx1,idx2)];
+    
+    if any(all(izq == [n1 n2],2))
+        segmentos_izq = [segmentos_izq; segmento];
+    end
+    
+    if any(all(der == [n1 n2],2))
+        segmentos_der = [segmentos_der; segmento];
+    end
+    
+end
+```
+
+Aquí cada par consecutivo de nodos \((n_1,n_2)\) se traduce en un intervalo de índices sobre la trayectoria:
+
+$$
+I_k = [\min(i_k^\star, i_{k+1}^\star),\ \max(i_k^\star, i_{k+1}^\star)]
+$$
+
+Si la pareja de nodos coincide con una regla de izquierda, ese intervalo se agrega a `segmentos_izq`. Si coincide con una regla de derecha, se agrega a `segmentos_der`.
+
+### 8.8 Interpretación funcional de los segmentos
+
+Cada fila de `segmentos_izq` o `segmentos_der` representa un rango continuo de puntos sobre la trayectoria global. Eso significa que la direccional no se activa en un único punto, sino durante toda la longitud del tramo correspondiente. Esta decisión es más realista desde el punto de vista vehicular, porque una direccional debe mantenerse encendida durante la ejecución completa de la maniobra y no solo al inicio.
+
+En términos de control, si el vehículo está recorriendo la trayectoria en el índice actual \(i\), entonces:
+
+- la direccional izquierda debe activarse si \(i \in [a_j,b_j]\) para algún segmento izquierdo,
+- la direccional derecha debe activarse si \(i \in [c_j,d_j]\) para algún segmento derecho.
+
+### 8.9 Guardado y persistencia de resultados
+
+```matlab
+%% =============================
+% GUARDAR
+% =============================
+
+save('segmentos_direccionales.mat', 'segmentos_izq', 'segmentos_der');
+```
+
+Guardar estos segmentos en un archivo `.mat` permite desacoplar la etapa de generación de reglas de la etapa de ejecución del vehículo. Es decir, la definición de direccionales se calcula una vez durante la planeación y luego puede ser reutilizada por Simulink o por cualquier módulo de lógica de luces sin necesidad de recomputarla.
+
+### 8.10 Visualización de segmentos con direccionales
+
+```matlab
+%% =============================
+% VISUALIZACIÓN 
+% =============================
+
+figure; hold on; grid on; axis equal;
+
+h_traj = plot(path_x_smooth, path_y_smooth, 'k');
+
+% IZQUIERDA (verde)
+h_izq = [];
+for i = 1:size(segmentos_izq,1)
+    idx = segmentos_izq(i,1):segmentos_izq(i,2);
+    h_izq = plot(path_x_smooth(idx), path_y_smooth(idx), 'g', 'LineWidth', 3);
+end
+
+% DERECHA (rojo)
+h_der = [];
+for i = 1:size(segmentos_der,1)
+    idx = segmentos_der(i,1):segmentos_der(i,2);
+    h_der = plot(path_x_smooth(idx), path_y_smooth(idx), 'r', 'LineWidth', 3);
+end
+
+legend([h_traj, h_izq, h_der], {'Path', 'left turn signal', 'right turn signal'});
+```
+
+### 8.11 Interpretación de la figura de direccionales
+
+En la figura generada por este script, la trayectoria completa aparece en color negro, los tramos donde debe encenderse la direccional izquierda aparecen en verde y los tramos donde debe encenderse la direccional derecha aparecen en rojo. Esta visualización es muy importante porque valida visualmente que las reglas de maniobra definidas a nivel de nodos quedaron correctamente proyectadas sobre la trayectoria suavizada.
+
+Desde el punto de vista de validación, esta figura permite comprobar tres cosas:
+
+1. que las maniobras de giro están asociadas a las zonas correctas del mapa,
+2. que las direccionales cubren el tramo completo de la maniobra,
+3. que el uso del nodo auxiliar 48 efectivamente mejora la representación de cruces izquierdos más cerrados o curvos.
+
+---
+
+## 9. Generación programática del escenario de competencia en QLabs
+
+Además de diseñar la lógica del vehículo, fue necesario construir un entorno de simulación controlado y reproducible dentro de QLabs. Para ello se desarrolló un script de generación del mapa y de los actores del escenario, cuya función es levantar la geometría del circuito, colocar la señalización, crear eventos dinámicos relevantes para la competencia y finalmente spawnear el QCar virtual en la posición inicial deseada.
+
+Este script no solo sirve para “dibujar” el entorno, sino para convertir QLabs en una plataforma experimental donde se puede evaluar al vehículo bajo condiciones realistas y repetibles: señales, semáforos, peatones, obstáculos y zonas de cruce.
+
+### 9.1 Selección del punto de spawn del vehículo
+
+```matlab
+%% Configurable Params
+spawn_location = 2;
+```
+
+Este parámetro permite seleccionar la posición inicial del QCar. En tu caso existen dos posibles ubicaciones:
+
+- `1`: posición de calibración,
+- `2`: zona tipo taxi hub.
+
+Esto es útil porque el mismo escenario puede utilizarse tanto para pruebas de calibración como para pruebas funcionales de operación estilo taxi autónomo.
+
+### 9.2 Función de limpieza y controlador de tráfico
+
+El script define dos funciones auxiliares: una de limpieza y otra de control dinámico del sistema semafórico y del peatón.
+
+```matlab
+function cleanupQLabs(qlabs)
+    qlabs.close()
+end
+```
+
+La función de limpieza permite cerrar correctamente la conexión con QLabs cuando termina la ejecución o cuando ocurre una excepción.
+
+La parte más importante es el controlador dinámico:
+
+```matlab
+function trafficLightController(qlabs)
+    disp('Iniciando controlador de tráfico y peatón...')
+    try
+        t1 = QLabsTrafficLight(qlabs);
+        t2 = QLabsTrafficLight(qlabs);
+        t3 = QLabsTrafficLight(qlabs);
+        t4 = QLabsTrafficLight(qlabs);
+        
+        hObstacle = QLabsPerson(qlabs);
+        hObstacle.actorNumber = 20; 
+        
+        LOC_A = [1.441, 0.569, 0.005]; 
+        LOC_B = [1.441, 0.809, 0.005]; 
+        hacia_B = true; 
+        
+        intersection1Flag = 0;
+        
+        clear cleanup;
+        cleanup = onCleanup(@() qlabs.close());
+
+        while(true)
+            fprintf('Ciclo de semáforo: %d\n', intersection1Flag);
+            
+            if intersection1Flag == 0
+                t1.set_color(3); t3.set_color(3); t2.set_color(1); t4.set_color(1);
+            elseif intersection1Flag == 1
+                t2.set_color(2); t4.set_color(2);
+            elseif intersection1Flag == 2
+                t1.set_color(1); t3.set_color(1); t2.set_color(3); t4.set_color(3);
+            elseif intersection1Flag == 3
+                t1.set_color(2); t3.set_color(2);
+            end
+
+            if hacia_B
+                hObstacle.move_to(LOC_B, 0.3, 1);
+                hacia_B = false;
+            else
+                hObstacle.move_to(LOC_A, 0.3, 1);
+                hacia_B = true;
+            end
+
+            intersection1Flag = mod((intersection1Flag + 1), 4);
+            pause(5);
+        end
+    catch ME
+        fprintf('Error en el controlador: %s\n', ME.message);
+    end
+end
+```
+
+### 9.3 Lógica dinámica de semáforos
+
+La variable `intersection1Flag` actúa como un contador cíclico de estado:
+
+$$
+intersection1Flag \in \{0,1,2,3\}
+$$
+
+y evoluciona según:
+
+$$
+intersection1Flag_{k+1} = (intersection1Flag_k + 1)\ \bmod\ 4
+$$
+
+Cada estado define una fase distinta de la intersección. En términos funcionales, el script alterna dos grupos de semáforos ortogonales, introduciendo fases de transición entre ellos. Esta estructura emula un control semafórico básico pero suficiente para generar condiciones de decisión para el vehículo autónomo.
+
+### 9.4 Movimiento cíclico del peatón dinámico
+
+El peatón dinámico asociado al actor 20 se mueve entre dos puntos definidos sobre un cruce peatonal:
+
+```matlab
+LOC_A = [1.441, 0.569, 0.005]; 
+LOC_B = [1.441, 0.809, 0.005];
+```
+
+El movimiento es alternado y cíclico, es decir:
+
+$$
+A \rightarrow B \rightarrow A \rightarrow B \rightarrow \dots
+$$
+
+con una pausa de 5 segundos entre ciclos. Este diseño es muy útil para pruebas de percepción y frenado porque genera un evento repetible: un peatón que cruza una zona crítica del mapa.
+
+### 9.5 Preparación del entorno de QLabs
+
+Antes de spawnear actores, el script agrega la librería de QLabs al path de MATLAB, detiene modelos RT previos y establece la conexión con QLabs:
+
+```matlab
+qlabs = QuanserInteractiveLabs();
+connection_established = qlabs.open('localhost');
+```
+
+También destruye actores previamente spawneados para evitar superposiciones o residuos de ejecuciones anteriores.
+
+### 9.6 Construcción del piso y los muros
+
+```matlab
+x_offset = 0.13;
+y_offset = 1.67;
+hFloor = QLabsQCarFlooring(qlabs);
+hFloor.spawn_degrees([x_offset, y_offset, 0.001],[0, 0, -90]);
+```
+
+Este bloque posiciona el piso del escenario con un corrimiento \((x_{offset}, y_{offset})\). Los muros se generan mediante varios ciclos `for`, spawneando segmentos rectos que delimitan el circuito. Además, se añaden dos muros inclinados en la parte inferior izquierda del mapa, lo que contribuye a reproducir la geometría completa del entorno.
+
+### 9.7 Señalización vertical y horizontal
+
+El script spawnea de forma explícita diferentes tipos de señalización:
+
+- señales de STOP,
+- señales de glorieta,
+- señales de YIELD,
+- pasos de cebra,
+- líneas guía blancas.
+
+Cada una se posiciona mediante coordenadas, rotaciones y escalas específicas. Esto significa que el escenario no es un entorno genérico, sino una reconstrucción controlada del circuito con elementos viales que el vehículo debe detectar e interpretar.
+
+### 9.8 Persona estática para simulación de pickup
+
+```matlab
+hPersonStatic = QLabsPerson(qlabs);
+
+loc_persona = [-0.424, 4.55, 0.005];
+rot_persona = [0, 0, -90];
+scale_persona = [0.1, 0.1, 0.1];
+id_persona = 10;
+config_persona = 11;
+
+hStatus = hPersonStatic.spawn_id_degrees(id_persona, loc_persona, rot_persona, scale_persona, config_persona, true);
+```
+
+Esta persona estática representa al pasajero que el vehículo debe simular recoger. El hecho de ubicarla sobre la banqueta y no sobre la calle es importante porque obliga al sistema a distinguir entre un peatón cruzando y una persona esperando para pickup.
+
+### 9.9 Persona dinámica cruzando la calle
+
+```matlab
+hPersonObstacle = QLabsPerson(qlabs);
+LOC_A_OBSTACULO = [1.441, 0.62, 0.005]; 
+LOC_B_OBSTACULO = [1.441, 0.81, 0.005]; 
+
+hPersonObstacle.spawn_id_degrees(20, LOC_A_OBSTACULO, [0, 0, -180], [0.1, 0.1, 0.1], 11, true);
+```
+
+Este actor dinámico es el que posteriormente es controlado por `trafficLightController`. Su función es simular un peatón cruzando repetidamente un paso de cebra, lo cual fuerza al vehículo a resolver correctamente la interacción entre percepción, lógica peatonal y frenado de seguridad.
+
+### 9.10 Obstáculo tipo cono
+
+```matlab
+hTrafficCone = QLabsTrafficCone(qlabs);
+
+loc_cone = [2.221, 1.017, 0.25];
+rot_cone = [0, 0, 0];
+scale_cone = [0.2, 0.2, 0.2];
+id_cone = 101;
+
+hStatusCone = hTrafficCone.spawn_id_degrees(id_cone, loc_cone, rot_cone, scale_cone, 0, true);
+```
+
+Este cono funciona como obstáculo físico de la competencia y es el objeto que activa la maniobra de evasión implementada en `avoidCone`. Su ubicación específica dentro del mapa permite generar pruebas controladas de esquive sobre una zona concreta del circuito.
+
+### 9.11 Cámaras del entorno
+
+El script spawnea dos cámaras libres. Una de ellas se utiliza como vista aérea tipo bird's-eye, mientras que otra se posiciona con ángulo lateral. Esto facilita la supervisión visual del escenario, la validación de trayectorias y la documentación de resultados.
+
+### 9.12 Spawn final del QCar y arranque del modelo RT
+
+```matlab
+calibration_location_rotation = [0, 2.13, 0.005, 0, 0, -90];
+taxi_hub_location_rotation = [-1.205, -0.83, 0.005, 0, 0, -44.7];
+
+myCar = QLabsQCar2(qlabs);
+
+switch spawn_location
+    case 1
+        spawn = calibration_location_rotation;
+    case 2
+        spawn = taxi_hub_location_rotation;
+end
+
+myCar.spawn_id_degrees(0, spawn(1:3), spawn(4:6), [1/10, 1/10, 1/10], 1);
+```
+
+Este bloque spawnea finalmente al vehículo en la posición seleccionada. Después, el modelo RT asociado a QCar se inicia mediante `quarc_run`, y el controlador dinámico de tráfico comienza su ejecución. Con esto, el escenario queda completamente operativo.
+
+---
+
+## 10. Lógica unificada de señales, semáforos, peatón de pickup y frenado reglamentario: `trafficSignsLogic`
+
+A medida que el proyecto evolucionó, la lógica de señales dejó de limitarse a STOP, YIELD y glorieta, y se transformó en un módulo más completo capaz de integrar varios eventos del entorno en una sola función. La función `trafficSignsLogic` representa precisamente esa evolución: un bloque de decisión que fusiona detección de señales, semáforos, persona de pickup y una bandera externa de seguridad peatonal.
+
+### 10.1 Objetivo de la función
+
+La función recibe:
+
+- una velocidad nominal `speed_in`,
+- la matriz de detecciones enriquecidas,
+- el tiempo actual `t`,
+- una bandera externa `pedestrian_flag`.
+
+y entrega:
+
+- la velocidad final `speed_out`,
+- una bandera `stop_ligth` que puede interpretarse como activación de luz de freno o estado de detención.
+
+```matlab
+function [speed_out, stop_ligth]= trafficSignsLogic(speed_in, detections, t, pedestrian_flag)
+```
+
+### 10.2 Variables persistentes y estados internos
+
+La función usa varias variables persistentes:
+
+```matlab
+persistent stop_active t_start stop_done
+persistent yield_active t_yield_start yield_done
+persistent person_active t_person_start person_phase person_done
+
+persistent traffic_state % 0 = WAIT, 1 = GO
+persistent green_counter
+```
+
+Estas variables convierten la función en una pequeña máquina de estados híbrida. No solo responde a detecciones instantáneas, sino que recuerda si ya se ejecutó un STOP, si está activa una espera por YIELD, si está ocurriendo una maniobra de pickup y si el vehículo ya se comprometió a cruzar una intersección con semáforo.
+
+### 10.3 Detección base de objetos y señales
+
+Dentro del ciclo principal, la función analiza las 10 detecciones disponibles:
+
+```matlab
+for i = 1:10
+    
+    class_id = detections(1,i);
+    prob     = detections(2,i);
+    dist     = detections(7,i);
+    
+    x1 = detections(3,i);
+    x2 = detections(5,i);
+    cx = (x1 + x2)/2;
+    
+    frontal = abs(cx - 320) < 100;
+    right_side = cx > 360;
+```
+
+Aquí aparecen dos criterios geométricos importantes:
+
+1. **frontal**: el objeto debe estar aproximadamente centrado en la imagen.
+2. **right_side**: el objeto se encuentra en el lado derecho del campo visual.
+
+Estos criterios permiten convertir detecciones visuales en contexto vial.
+
+### 10.4 Reglas de detección reglamentaria
+
+Las reglas implementadas fueron:
+
+#### STOP
+
+```matlab
+if class_id == 5 && prob > 0.9 && dist < 1.3 && frontal
+    stop_detected = true;
+end
+```
+
+Se activa cuando la señal de STOP está en el frente, a menos de 1.3 m y con alta confianza.
+
+#### YIELD
+
+```matlab
+if class_id == 7 && prob > 0.9 && dist < 1.5 && frontal
+    yield_detected = true;
+end
+```
+
+#### ROUNDABOUT
+
+```matlab
+if class_id == 4 && prob > 0.8 && dist < 2.0 && frontal
+    round_detected = true;
+end
+```
+
+#### PERSONA DE PICKUP
+
+```matlab
+if class_id == 2 && prob > 0.8 && dist < 7.3 && right_side
+    person_detected = true;
+end
+```
+
+Aquí la persona se considera relevante únicamente si está del lado derecho del vehículo, lo cual es consistente con el caso de uso de recoger a un pasajero sobre la banqueta.
+
+#### SEMÁFORO
+
+```matlab
+if prob > 0.85 && dist < 3.6 && frontal
+    
+    traffic_dist = dist;
+    
+    if class_id == 3
+        traffic_red = true;
+    elseif class_id == 1
+        traffic_green = true;
+    elseif class_id == 6
+        traffic_yellow = true;
+    end
+end
+```
+
+Esto define una clasificación explícita de estados del semáforo a partir del modelo detector.
+
+### 10.5 Prioridad máxima: bandera de peatón externo
+
+La primera condición que se evalúa es:
+
+```matlab
+if pedestrian_flag == 1
+    speed_out = 0;
+    stop_ligth = 1;
+    return;
+end
+```
+
+Esto significa que la función `trafficSignsLogic` cede prioridad absoluta a una capa externa de seguridad peatonal. En otras palabras, si otro módulo determina que existe riesgo de colisión con un peatón u obstáculo, la lógica de señales no discute esa decisión: simplemente ordena detener el vehículo.
+
+Desde el punto de vista de arquitectura de control, esto es correcto. La seguridad inmediata debe dominar sobre la lógica reglamentaria ordinaria.
+
+### 10.6 Lógica de STOP
+
+```matlab
+if stop_detected && ~stop_active && ~stop_done
+    stop_active = true;
+    stop_ligth = 1;
+    t_start = t;
+end
+
+if stop_active
+    if (t - t_start) < 5
+        speed_out = 0;
+        return;
+    else
+        stop_ligth = 0;
+        stop_active = false;
+        stop_done = true;
+    end
+end
+```
+
+Matemáticamente, si \(t_0\) es el instante de activación de STOP, la salida queda:
+
+$$
+v_{out}(t) =
+\begin{cases}
+0, & 0 \le t-t_0 < 5 \\
+v_{in}(t), & t-t_0 \ge 5
+\end{cases}
+$$
+
+### 10.7 Lógica de YIELD
+
+```matlab
+if yield_detected && ~yield_active && ~yield_done
+    yield_active = true;
+    t_yield_start = t;
+end
+
+if yield_active
+    if (t - t_yield_start) < 2
+        speed_out = 0;
+        stop_ligth = 1;
+        return;
+    else
+        yield_active = false;
+        stop_ligth = 0;
+        yield_done = true;
+    end
+end
+```
+
+Si \(t_y\) es el instante de activación de YIELD, entonces:
+
+$$
+v_{out}(t) =
+\begin{cases}
+0, & 0 \le t-t_y < 2 \\
+v_{in}(t), & t-t_y \ge 2
+\end{cases}
+$$
+
+### 10.8 Lógica de pickup de persona
+
+```matlab
+if person_detected && ~person_active && ~person_done
+    person_active = true;
+    t_person_start = t;
+    person_phase = 1;
+end
+```
+
+Cuando la persona de pickup es detectada, la función activa una secuencia temporal de maniobra. El código implementa dos fases:
+
+```matlab
+if person_active
+    
+    dt = t - t_person_start;
+    
+    if dt < 5
+        speed_out = speed_in; 
+        
+    elseif dt < 9
+        speed_out = 0;
+        stop_ligth = 1;
+    else
+        person_active = false;
+        person_done = true;
+        stop_ligth = 0;
+    end
+    
+    return;
+end
+```
+
+Aquí hay un detalle importante: el comentario en el código menciona “avanzar 3 segundos”, pero la implementación real usa:
+
+$$
+dt < 5
+$$
+
+por lo que la fase 1 dura realmente 5 segundos, no 3. Luego el vehículo se detiene durante 4 segundos:
+
+$$
+5 \le dt < 9
+$$
+
+Esto modela una situación de pickup en la que el vehículo primero termina de aproximarse y luego permanece detenido para simular el ascenso del pasajero.
+
+Además, como el reinicio de `person_done` está comentado, esta maniobra ocurre una sola vez por ejecución, lo cual también es coherente con un evento único de recolección de pasajero.
+
+### 10.9 Máquina de estados para semáforo
+
+La lógica de semáforo usa dos estados:
+
+- `traffic_state = 0`: **WAIT**
+- `traffic_state = 1`: **GO**
+
+y un contador de verde estable:
+
+```matlab
+commit_dist = 1.2;
+```
+
+#### Estado WAIT
+
+```matlab
+if traffic_state == 0
+    
+    if traffic_green
+        green_counter = green_counter + 1;
+    else
+        green_counter = 0;
+    end
+    
+    if traffic_red || traffic_yellow
+        speed_out = 0;
+        stop_ligth = 1;
+        return;
+    end
+    
+    if green_counter > 3
+        
+        if traffic_dist < commit_dist
+            traffic_state = 1;
+        end
+        
+    end
+end
+```
+
+La idea aquí es muy importante: el vehículo no se compromete a cruzar con un único frame verde. Exige al menos 3 frames consecutivos de verde, lo que introduce filtrado temporal y reduce falsos cambios de estado por detecciones inestables.
+
+Además, solo entra al estado `GO` cuando el semáforo está suficientemente cerca:
+
+$$
+traffic\_dist < 1.2
+$$
+
+Esto implementa una lógica de compromiso de cruce: si el vehículo ya está demasiado cerca de la intersección con verde estable, se compromete a cruzarla y deja de reaccionar a cambios posteriores del semáforo.
+
+#### Estado GO
+
+```matlab
+if traffic_state == 1
+    
+    speed_out = speed_in;
+    
+    if traffic_dist > 3.5
+        traffic_state = 0;
+        green_counter = 0;
+    end
+    
+end
+```
+
+Mientras está en `GO`, el vehículo ignora completamente el semáforo. Esto es una decisión de diseño muy buena, porque evita un comportamiento físicamente absurdo: frenar en mitad de la intersección si el semáforo cambia justo durante el cruce.
+
+### 10.10 Lógica de glorieta
+
+```matlab
+if round_detected
+    speed_out = 0.5 * speed_in;
+end
+```
+
+La glorieta reduce la velocidad al 50 % de la referencia nominal, lo cual modela una conducción más prudente en zonas de curvatura circular.
+
+---
+
+## 11. Capa robusta de frenado de seguridad basada en detección y profundidad: `pedestrianStopLogic`
+
+Finalmente, se añadió una función específica de frenado de seguridad llamada `pedestrianStopLogic`. Aunque fue pensada para atender el caso de una persona cruzando, su implementación actual funciona como una capa más general de seguridad frontal: combina detección visual con evidencia de profundidad para decidir si existe un obstáculo próximo frente al vehículo.
+
+### 11.1 Código completo
+
+```matlab
+function stop_flag = pedestrianStopLogic(detections, depth_frame)
+
+persistent stop_state counter_on counter_off
+
+if isempty(stop_state)
+    stop_state = false;
+    counter_on = 0;
+    counter_off = 0;
+end
+
+valid_object = false;
+
+for i = 1:10
+    
+    class_id = detections(1,i);
+    prob     = detections(2,i);
+    dist     = detections(7,i);
+    
+    if prob < 0.8 || dist == 0
+        continue;
+    end
+    
+    x1 = detections(3,i);
+    x2 = detections(5,i);
+    cx = (x1 + x2)/2;
+    
+    if abs(cx - 320) < 80 && dist < 3.0
+        
+        if class_id ~= 0
+            valid_object = true;
+        end
+        
+    end
+end
+
+roi = depth_frame(200:350, 260:380);
+
+valid_pixels = roi(roi > 0);
+
+if isempty(valid_pixels)
+    obstacle_close = false;
+else
+    d_sorted = sort(valid_pixels(:));
+    idx = max(1, round(0.1 * length(d_sorted)));
+    d_min = d_sorted(idx);
+    
+    obstacle_close = d_min < 0.5;
+end
+
+if valid_object && obstacle_close
+    counter_on = counter_on + 1;
+    counter_off = 0;
+else
+    counter_off = counter_off + 1;
+    counter_on = 0;
+end
+
+if counter_on > 2
+    stop_state = true;
+end
+
+if counter_off > 4
+    stop_state = false;
+end
+
+stop_flag = stop_state;
+
+end
+```
+
+### 11.2 Fase 1: gating por detección
+
+La función empieza verificando si existe un objeto visualmente válido frente al vehículo. Las condiciones son:
+
+- confianza mayor a 0.8,
+- distancia estimada distinta de cero,
+- posición aproximadamente centrada,
+- distancia menor a 3.0 m,
+- clase distinta de cono.
+
+En términos matemáticos, para cada detección \(i\):
+
+$$
+\rho_i \ge 0.8,\qquad \hat{z}_i > 0,\qquad |c_{x,i} - 320| < 80,\qquad \hat{z}_i < 3.0,\qquad c_i \neq 0
+$$
+
+Si alguna detección cumple esto, entonces se activa `valid_object = true`.
+
+Es importante notar que esta lógica no se restringe únicamente a peatones; en su forma actual, cualquier objeto frontal válido distinto de un cono puede disparar la primera parte del criterio. Eso hace que el módulo sea conservador y actúe como una capa general de seguridad frontal.
+
+### 11.3 Fase 2: validación espacial en ROI de profundidad
+
+Después del gating visual, la función analiza una región fija del mapa de profundidad:
+
+```matlab
+roi = depth_frame(200:350, 260:380);
+```
+
+Esta región corresponde aproximadamente a una ventana central-baja de la imagen, es decir, la zona del espacio directamente frente al vehículo donde un obstáculo inminente sería más relevante para seguridad.
+
+Sea:
+
+$$
+\mathcal{R} = \{D(u,v)\;|\; 200 \le u \le 350,\ 260 \le v \le 380,\ D(u,v) > 0\}
+$$
+
+el conjunto de píxeles válidos en esa región.
+
+### 11.4 Uso del percentil 10 como estimador robusto
+
+En lugar de tomar el mínimo absoluto de profundidad, se ordenan los valores y se toma el percentil 10:
+
+```matlab
+d_sorted = sort(valid_pixels(:));
+idx = max(1, round(0.1 * length(d_sorted)));
+d_min = d_sorted(idx);
+```
+
+Eso equivale a aproximar:
+
+$$
+d_{10\%} = Q_{0.10}(\mathcal{R})
+$$
+
+donde \(Q_{0.10}\) es el cuantil 10 %. Esta elección es muy buena desde el punto de vista ingenieril, porque evita que un único píxel ruidoso demasiado pequeño active un frenado falso. El percentil 10 sigue siendo sensible a obstáculos cercanos, pero es mucho más robusto que usar el mínimo puro.
+
+Luego se define:
+
+$$
+obstacle\_close =
+\begin{cases}
+1, & d_{10\%} < 0.5 \\
+0, & d_{10\%} \ge 0.5
+\end{cases}
+$$
+
+### 11.5 Fase 3: histéresis temporal
+
+El frenado no se activa con una sola observación. Se implementa un esquema de histéresis temporal con dos contadores:
+
+- `counter_on`: cuenta frames consecutivos con evidencia de obstáculo,
+- `counter_off`: cuenta frames consecutivos seguros.
+
+```matlab
+if valid_object && obstacle_close
+    counter_on = counter_on + 1;
+    counter_off = 0;
+else
+    counter_off = counter_off + 1;
+    counter_on = 0;
+end
+```
+
+La lógica final es:
+
+- activar STOP después de 3 frames consistentes:
+
+$$
+counter\_on > 2 \Rightarrow stop\_state = true
+$$
+
+- liberar STOP después de 5 frames seguros:
+
+$$
+counter\_off > 4 \Rightarrow stop\_state = false
+$$
+
+Esto introduce histéresis y elimina oscilaciones rápidas del tipo frena–avanza–frena causadas por ruido visual o depth intermitente.
+
+### 11.6 Interpretación del output
+
+El resultado final es:
+
+```matlab
+stop_flag = stop_state;
+```
+
+Este `stop_flag` se conecta como entrada a `trafficSignsLogic`, donde tiene la máxima prioridad. En consecuencia, el sistema completo queda estructurado de la siguiente manera:
+
+1. `pedestrianStopLogic` evalúa si existe un riesgo frontal inmediato.
+2. Si lo hay, emite `stop_flag = 1`.
+3. `trafficSignsLogic` recibe esa bandera y ordena detener el vehículo antes de procesar cualquier otra regla.
+
+Desde el punto de vista de arquitectura, esto es correcto porque separa la **seguridad reactiva inmediata** de la **lógica reglamentaria de tráfico**.
+
+---
+
+## 12. Integración funcional de estas nuevas capas en el sistema completo
+
+Con la incorporación de estas nuevas funciones, el sistema de conducción autónoma quedó enriquecido en tres dimensiones adicionales:
+
+1. **Comportamiento vial expresivo**, mediante el uso de direccionales en segmentos específicos de la trayectoria.
+2. **Escenario dinámico reproducible**, mediante un script que construye el mapa, la señalización, el cono, la persona de pickup, el peatón dinámico y el ciclo semafórico.
+3. **Lógica de decisión avanzada**, mediante la fusión de señales, semáforos, pickup y frenado robusto de seguridad.
+
+En términos funcionales, el flujo global del sistema puede describirse así:
+
+- la trayectoria planeada define el camino nominal del vehículo,
+- los segmentos de direccionales añaden comportamiento vial contextual,
+- el detector visual identifica señales, peatones, semáforos y obstáculos,
+- `pedestrianStopLogic` filtra riesgos frontales inmediatos,
+- `trafficSignsLogic` integra reglas reglamentarias y eventos de pickup,
+- el escenario generado en QLabs provee los estímulos físicos necesarios para validar todo el sistema.
+
+Con ello, el proyecto deja de ser únicamente un seguimiento de trayectoria y se convierte en una arquitectura de conducción autónoma mucho más rica, capaz de interactuar con el entorno de forma más realista, segura y coherente con reglas de tránsito.
