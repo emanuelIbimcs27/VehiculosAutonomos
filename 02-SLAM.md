@@ -380,8 +380,8 @@ Se definió la siguiente tabla de penalizaciones:
 | Semáforo | 3 |
 | Stop | 4 |
 | Cruce de cebra | 2 |
-| Rotonda | 9 |
-| Yield | 9 |
+| Rotonda | 1 |
+| Yield | 1 |
 
 Si una arista contiene uno o varios de estos elementos, su penalización total se calcula como:
 
