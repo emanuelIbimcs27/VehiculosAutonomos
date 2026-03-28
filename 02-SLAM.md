@@ -391,12 +391,11 @@ $$
 
 donde:
 
-- \(n_{sem,ij}\): número de semáforos en el tramo,
-- \(n_{stop,ij}\): número de señales STOP,
-- \(n_{cebra,ij}\): número de cruces peatonales,
-- \(n_{rot,ij}\): número de elementos relacionados con rotonda,
-- \(n_{yield,ij}\): número de señales de ceda el paso.
-
+- $n_{tl,ij}$: número de semáforos en el tramo
+- $n_{stop,ij}$: número de señales STOP
+- $n_{cw,ij}$: número de cruces peatonales
+- $n_{round,ij}$: número de elementos relacionados con rotonda
+- $n_{yield,ij}$: número de señales de ceda el paso
 El peso total de cada arista queda entonces:
 
 $$
