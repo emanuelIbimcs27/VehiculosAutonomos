@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Matlab Qcar Sensores
+title: Entrenamiento del Modelo
 nav_order: 1
-parent: Sistemas Embebidos
+parent: CPS IoT Competition 2026
 permalink: /CPS/entrenamiento
 ---
 
