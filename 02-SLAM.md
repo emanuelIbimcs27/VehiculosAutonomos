@@ -549,7 +549,7 @@ x_s(\tau) = \operatorname{PCHIP}(t_k, x_k), \qquad
 y_s(\tau) = \operatorname{PCHIP}(t_k, y_k)
 $$
 
-donde (x_k, y_k) son los puntos discretos corregidos y tau es el parámetro continuo de interpolación.
+donde $(x_k, y_k)$ son los puntos discretos corregidos y tau es el parámetro continuo de interpolación.
 
 ### 2.9 Visualización final de la trayectoria
 
