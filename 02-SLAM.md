@@ -583,14 +583,14 @@ path_y_dijkstra  = path_y_smooth(:);
 
 ### Figura del mapa base con nodos del grafo
 
-![Mapa base con nodos y conectividad del grafo](/assets/img/mapa_nodos_qcar.png)
+![Mapa base con nodos y conectividad del grafo](/assets/img/Grfos.jpeg)
 
 **Descripción técnica de la figura.**  
 La figura muestra el mapa de competencia utilizado para construir el grafo del sistema de planeación. Sobre el circuito se colocaron nodos numerados en posiciones clave del entorno: cambios de curvatura, entradas y salidas de intersecciones, conexiones entre lazo externo e interno y zonas cercanas a eventos viales. A partir de estas coordenadas se construyó la estructura topológica del problema.
 
 ### Figura de trayectoria global generada
 
-![Trayectoria global generada para el QCar 2 virtual](/assets/img/trayectoria_qcar.png)
+![Trayectoria global generada para el QCar 2 virtual](/assets/img/MapaVirtualGenerado.jpeg)
 
 **Descripción técnica de la figura.**  
 La línea roja representa la trayectoria global final que seguirá el QCar 2 virtual. Dicha trayectoria se obtuvo resolviendo un problema de optimización sobre el grafo dirigido del mapa y posteriormente suavizando la ruta discreta mediante interpolación PCHIP. La referencia punteada negra corresponde al marco espacial del entorno utilizado como base de calibración.
