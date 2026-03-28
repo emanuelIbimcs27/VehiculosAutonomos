@@ -1,9 +1,9 @@
 ---
 layout: default
-title: CPS IoT Competition 2026
-nav_order: 4
+title: Matlab Qcar Sensores
+nav_order: 1
 has_children: true
-permalink: /CPS/
+permalink: /CPS/entrenamiento
 ---
 
 # Metodología de Diseño y Validación del Algoritmo de Self-Driving para la CPS IoT Competition 2026
