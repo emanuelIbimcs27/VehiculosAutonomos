@@ -3,7 +3,7 @@ layout: default
 title: Matlab Qcar Sensores
 nav_order: 3
 has_children: true
-permalink: /sistemas-embebidos/
+permalink: /QcarSensors/
 ---
 
 # CPS IoT Self-Driving Competition — Team Autonomous Wolf
