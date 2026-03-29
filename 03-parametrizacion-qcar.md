@@ -5,9 +5,7 @@ nav_order: 1
 parent: CPS IoT Competition 2026
 permalink: /CPS/parametrizacion-qcar/
 ---
-Claro. Aquí está esa parte en **inglés**, lista para copiar y pegar. Está basada en el texto que compartiste en tu archivo adjunto. 
 
-````markdown id="1r2w9k"
 # Virtual QCar 2 Parametrization
 
 ## 1. Virtual QCar 2 Parametrization and Environment Definition

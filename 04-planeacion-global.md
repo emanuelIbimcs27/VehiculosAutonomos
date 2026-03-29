@@ -1,40 +1,43 @@
 ---
 layout: default
-title: Planeación Global de Trayectoria
+title: Global Career Planning
 nav_order: 2
 parent: CPS IoT Competition 2026
 permalink: /CPS/planeacion-global/
 ---
 
-# Planeación Global de Trayectoria
+Claro. Aquí tienes **toda esa sección completa en inglés**, sin quitar nada y lista para copiar y pegar. Está basada en el texto que compartiste en tu archivo adjunto. 
 
-## 2. Planeación global de trayectoria mediante grafos dirigidos, coordenadas del mapa de QLabs y penalizaciones viales
+````markdown id="k3m8vd"
+# Global Trajectory Planning
 
-La trayectoria de referencia del vehículo no fue dibujada manualmente. Se construyó a partir de una representación topológica del circuito de competencia, obtenida directamente sobre el mapa de QLabs. Para ello, se seleccionaron puntos estratégicos sobre la red vial del entorno virtual y a cada uno se le asignó una coordenada cartesiana $(x,y)$. Estos puntos se convirtieron en nodos de un grafo dirigido, mientras que las conexiones físicamente transitables entre ellos se modelaron como aristas.
+## 2. Global trajectory planning through directed graphs, QLabs map coordinates, and road-related penalties
 
-Desde el punto de vista de ingeniería de navegación, esta metodología permite convertir un problema continuo de movilidad en un problema discreto de optimización sobre red. En lugar de preguntarse continuamente “por dónde debo moverme en el plano”, el vehículo resuelve primero “por qué secuencia de nodos debo pasar para llegar al destino con el menor costo posible”. Después, esa secuencia discreta se suaviza para generar una trayectoria continua físicamente seguible por el controlador.
+The vehicle reference trajectory was not drawn manually. Instead, it was constructed from a topological representation of the competition circuit, obtained directly from the QLabs map. To do so, strategic points were selected along the road network of the virtual environment, and each one was assigned Cartesian coordinates $(x,y)$. These points were converted into nodes of a directed graph, while the physically traversable connections between them were modeled as edges.
 
-### 2.1 Modelado del conjunto de nodos
+From the perspective of navigation engineering, this methodology makes it possible to convert a continuous mobility problem into a discrete network optimization problem. Instead of continuously asking “where should the vehicle move on the plane,” the vehicle first solves “through which sequence of nodes should it pass in order to reach the destination with the minimum possible cost.” That discrete sequence is then smoothed to generate a continuous trajectory that can be physically followed by the controller.
 
-Si se denota por
+### 2.1 Modeling the set of nodes
+
+If
 
 $$
 V = \{v_1, v_2, \dots, v_N\}
 $$
 
-al conjunto de nodos, entonces cada nodo se define como:
+denotes the set of nodes, then each node is defined as:
 
 $$
 v_i = (x_i, y_i)
 $$
 
-En este proyecto se utilizaron 47 nodos, es decir:
+In this project, 47 nodes were used, that is:
 
 $$
 N = 47
 $$
 
-La matriz de nodos fue:
+The node matrix was:
 
 ```matlab
 nodes = [
@@ -86,27 +89,27 @@ nodes = [
    -1.937   0.4
    -1.696   -0.399
 ];
-```
+````
 
-Estos nodos fueron extraídos del mapa de QLabs y colocados en posiciones clave del circuito: cambios de curvatura, entradas y salidas de intersecciones, conexiones entre lazo externo e interno, así como zonas relevantes para maniobras de giro y transición entre carriles.
+These nodes were extracted from the QLabs map and placed at key positions of the circuit: curvature changes, entrances and exits of intersections, connections between the outer and inner loops, as well as zones relevant for turning maneuvers and lane transitions.
 
-Cada nodo representa una posición geométrica relevante dentro de la red vial. Por ejemplo, si un nodo aparece en la entrada de una intersección, su función no es solo “marcar un punto”, sino dividir el mapa en tramos navegables con sentido lógico para el vehículo. Esto permite que la planeación no dependa únicamente de la forma visual del circuito, sino de su estructura funcional.
+Each node represents a geometrically relevant position within the road network. For example, if a node appears at the entrance of an intersection, its function is not merely to “mark a point,” but to divide the map into navigable segments with a logical flow for the vehicle. This allows planning to depend not only on the visual shape of the circuit, but also on its functional structure.
 
-### 2.2 Modelado del conjunto de aristas
+### 2.2 Modeling the set of edges
 
-Una arista dirigida
+A directed edge
 
 $$
 e_{ij} = (v_i, v_j)
 $$
 
-indica que el vehículo puede desplazarse desde el nodo $i$ hacia el nodo $j$. El grafo completo queda definido como:
+indicates that the vehicle can move from node $i$ to node $j$. The complete graph is therefore defined as:
 
 $$
 G = (V, E, W)
 $$
 
-donde $E$ es el conjunto de aristas y $W$ el conjunto de pesos asociados.
+where $E$ is the set of edges and $W$ is the set of associated weights.
 
 ```matlab
 edges = [
@@ -172,17 +175,17 @@ edges = [
 ];
 ```
 
-El uso de un grafo dirigido es esencial, ya que no todas las conexiones del circuito son equivalentes ni simétricas. Esto obliga al planificador a respetar la lógica de circulación del entorno y evita rutas físicamente inviables o contrarias al sentido esperado de desplazamiento.
+The use of a directed graph is essential, since not all circuit connections are equivalent or symmetric. This forces the planner to respect the traffic flow logic of the environment and prevents physically infeasible routes or routes that go against the expected direction of travel.
 
-### 2.3 Distancia geométrica entre nodos
+### 2.3 Geometric distance between nodes
 
-Para cada arista $(i,j)$, se calcula primero la distancia euclidiana entre el nodo de origen y el nodo destino:
+For each edge $(i,j)$, the Euclidean distance between the origin node and the destination node is first computed:
 
 $$
 d_{ij} = \sqrt{(x_j - x_i)^2 + (y_j - y_i)^2}
 $$
 
-En código:
+In code:
 
 ```matlab
 numEdges = size(edges,1);
@@ -201,73 +204,73 @@ for k = 1:numEdges
 end
 ```
 
-Esta distancia representa el costo puramente geométrico de transitar entre dos nodos consecutivos. Si la planeación dependiera solo de este término, el vehículo elegiría siempre la ruta de menor longitud total. Sin embargo, en un entorno vial eso no siempre conduce a la mejor trayectoria desde el punto de vista operacional.
+This distance represents the purely geometric cost of traveling between two consecutive nodes. If planning depended only on this term, the vehicle would always choose the shortest total route. However, in a road environment, that does not always lead to the best trajectory from an operational standpoint.
 
-### 2.4 Penalización por complejidad vial
+### 2.4 Penalty for road-related complexity
 
-Una de las decisiones más importantes del proyecto fue no seleccionar la trayectoria únicamente por longitud geométrica. En un sistema de conducción autónoma, la ruta más corta no siempre es la más conveniente, ya que ciertos tramos del mapa implican mayor complejidad operativa debido a la presencia de elementos viales como semáforos, señales de alto, cruces peatonales, glorietas o señales de ceda el paso. Por esta razón, a cada arista del grafo se le asignó una penalización adicional según los elementos presentes en ese tramo.
+One of the most important decisions of the project was not to select the trajectory based solely on geometric length. In an autonomous driving system, the shortest route is not always the most convenient one, since certain segments of the map imply greater operational complexity due to the presence of road elements such as traffic lights, stop signs, crosswalks, roundabouts, or yield signs. For this reason, each edge of the graph was assigned an additional penalty according to the elements present along that segment.
 
-La tabla de penalizaciones utilizada fue la siguiente:
+The penalty table used was the following:
 
-| Elemento vial | Penalización |
-|---|---:|
-| Traffic light | 3 |
-| Stop signal | 4 |
-| Crosswalk | 2 |
-| Round signal | 1 |
-| Yield signal | 1 |
+| Road element  | Penalty |
+| ------------- | ------: |
+| Traffic light |       3 |
+| Stop signal   |       4 |
+| Crosswalk     |       2 |
+| Round signal  |       1 |
+| Yield signal  |       1 |
 
-De este modo, si una arista conecta dos nodos y en ese trayecto existe más de un elemento vial, la penalización total de dicha arista se obtiene sumando las contribuciones individuales de todos los elementos presentes. Matemáticamente, la penalización asociada a la arista que conecta el nodo $i$ con el nodo $j$ se define como:
+In this way, if an edge connects two nodes and more than one road element exists along that segment, the total penalty of that edge is obtained by summing the individual contributions of all the elements present. Mathematically, the penalty associated with the edge connecting node $i$ to node $j$ is defined as:
 
 $$
-p_{ij} = 3\,n_{tl,ij} + 4\,n_{stop,ij} + 2\,n_{cw,ij} + 1\,n_{round,ij} + 1\,n_{yield,ij}
+p_{ij} = 3,n_{tl,ij} + 4,n_{stop,ij} + 2,n_{cw,ij} + 1,n_{round,ij} + 1,n_{yield,ij}
 $$
 
-donde:
+where:
 
-- $n_{tl,ij}$: número de semáforos en el tramo
-- $n_{stop,ij}$: número de señales STOP
-- $n_{cw,ij}$: número de cruces peatonales
-- $n_{round,ij}$: número de elementos relacionados con rotonda
-- $n_{yield,ij}$: número de señales de ceda el paso
+* $n_{tl,ij}$: number of traffic lights on the segment
+* $n_{stop,ij}$: number of stop signs
+* $n_{cw,ij}$: number of crosswalks
+* $n_{round,ij}$: number of roundabout-related elements
+* $n_{yield,ij}$: number of yield signs
 
-Por tanto, el peso total de cada arista no depende únicamente de su longitud geométrica, sino de la suma entre su distancia y su penalización vial:
+Therefore, the total weight of each edge does not depend only on its geometric length, but on the sum of its distance and its road-related penalty:
 
 $$
 w_{ij} = d_{ij} + p_{ij}
 $$
 
-donde $d_{ij}$ es la distancia euclidiana entre los nodos $i$ y $j$, calculada como:
+where $d_{ij}$ is the Euclidean distance between nodes $i$ and $j$, computed as:
 
 $$
 d_{ij} = \sqrt{(x_j - x_i)^2 + (y_j - y_i)^2}
 $$
 
-Esta formulación permite que el algoritmo de planeación prefiera trayectorias no solo más cortas, sino también más convenientes desde el punto de vista operativo.
+This formulation allows the planning algorithm to prefer trajectories that are not only shorter, but also more convenient from an operational point of view.
 
-#### Ejemplo de aplicación de la penalización
+#### Example of penalty application
 
-Si entre dos nodos del mapa, por ejemplo entre el nodo $n$ y el nodo $m$, existe un **crosswalk** y una **stop signal**, entonces la penalización total de ese tramo se calcula como:
+If between two nodes on the map, for example between node $n$ and node $m$, there is a **crosswalk** and a **stop signal**, then the total penalty for that segment is calculated as:
 
 $$
 p_{nm} = 2 + 4 = 6
 $$
 
-y por tanto el peso final de la arista queda:
+and therefore the final weight of the edge becomes:
 
 $$
 w_{nm} = d_{nm} + 6
 $$
 
-De manera análoga, si un tramo contiene un semáforo y una señal de yield, la penalización sería:
+Similarly, if a segment contains a traffic light and a yield sign, the penalty would be:
 
 $$
 p_{ij} = 3 + 1 = 4
 $$
 
-Este criterio convierte el problema de planeación en una optimización sobre un mapa ponderado, donde el vehículo busca la ruta de menor costo total y no simplemente la de menor distancia.
+This criterion transforms the planning problem into an optimization problem over a weighted map, where the vehicle seeks the route with the minimum total cost and not simply the one with the minimum distance.
 
-### 2.5 Vector de penalizaciones utilizado
+### 2.5 Penalty vector used
 
 ```matlab
 penalty = zeros(size(edges,1),1);
@@ -333,17 +336,17 @@ penalty(58) = 2;
 penalty(59) = 0;
 ```
 
-Este vector representa la traducción práctica de la evaluación vial realizada sobre los distintos segmentos del mapa. En términos ingenieriles, lo que se hizo fue asignar a cada arista del grafo un costo adicional derivado del contexto vial que le corresponde. Esto significa que el mapa no se trató como una simple colección de distancias geométricas, sino como una red de caminos con distinto nivel de complejidad operativa.
+This vector represents the practical translation of the road evaluation carried out over the different segments of the map. In engineering terms, what was done was to assign each edge of the graph an additional cost derived from the road context associated with it. This means that the map was not treated as a simple collection of geometric distances, but rather as a network of paths with different levels of operational complexity.
 
-### 2.6 Obtención de la ruta óptima
+### 2.6 Obtaining the optimal route
 
-La ruta óptima se obtiene resolviendo el problema:
+The optimal route is obtained by solving the problem:
 
 $$
 P^\star = \arg\min_{P \in \mathcal{P}(s,g)} \sum_{(i,j)\in P} w_{ij}
 $$
 
-donde $s$ es el nodo inicial y $g$ el nodo objetivo.
+where $s$ is the initial node and $g$ is the goal node.
 
 ```matlab
 G = digraph(edges(:,1), edges(:,2), weights);
@@ -354,11 +357,11 @@ goalNode = 44;
 [pathNodes, totalCost] = shortestpath(G, startNode, goalNode);
 ```
 
-Aquí el vehículo parte del nodo 1 y se dirige al nodo 44. La variable `pathNodes` contiene la secuencia discreta de nodos que minimiza el costo total. La variable `totalCost` representa el valor acumulado de esa función objetivo.
+Here, the vehicle starts at node 1 and heads toward node 44. The variable `pathNodes` contains the discrete sequence of nodes that minimizes the total cost. The variable `totalCost` represents the accumulated value of that objective function.
 
-### 2.7 Corrección geométrica de cruces críticos
+### 2.7 Geometric correction of critical crossings
 
-Aunque la ruta discreta resultante es óptima en términos del grafo, algunas transiciones en intersecciones pueden ser geométricamente pobres. Para resolver esto se definió un nodo auxiliar central:
+Although the resulting discrete route is optimal in terms of the graph, some transitions at intersections may be geometrically poor. To solve this, an auxiliary central node was defined:
 
 ```matlab
 centro_interseccion = [0.144, 0.939]; 
@@ -369,7 +372,7 @@ casos_criticos = [23, 32;
                   31, 45];
 ```
 
-y se inserta cuando aparece una conexión crítica:
+and it is inserted whenever a critical connection appears:
 
 ```matlab
 pathNodes_corrected = [];
@@ -390,11 +393,11 @@ end
 pathNodes_corrected = [pathNodes_corrected, pathNodes(end)];
 ```
 
-Esta corrección no cambia la lógica global del camino mínimo, pero sí mejora su forma geométrica local. El nodo auxiliar funciona como punto de apoyo adicional en zonas donde un giro directo entre nodos extremos produciría una curva poco natural para el vehículo.
+This correction does not change the global logic of the shortest path, but it does improve its local geometric shape. The auxiliary node acts as an additional support point in areas where a direct turn between extreme nodes would produce an unnatural curve for the vehicle.
 
-### 2.8 Suavizado de trayectoria mediante PCHIP
+### 2.8 Trajectory smoothing using PCHIP
 
-Una vez corregida la secuencia discreta, se genera una trayectoria continua:
+Once the discrete sequence has been corrected, a continuous trajectory is generated:
 
 ```matlab
 path_x_final = nodes(pathNodes_corrected, 1);
@@ -407,18 +410,18 @@ path_x_smooth = interp1(t_new, path_x_final, tq_new, 'pchip');
 path_y_smooth = interp1(t_new, path_y_final, tq_new, 'pchip');
 ```
 
-Matemáticamente:
+Mathematically:
 
 $$
 x_s(\tau) = \operatorname{PCHIP}(t_k, x_k), \qquad
 y_s(\tau) = \operatorname{PCHIP}(t_k, y_k)
 $$
 
-donde $(x_k, y_k)$ son los puntos discretos corregidos y $\tau$ es el parámetro continuo de interpolación.
+where $(x_k, y_k)$ are the corrected discrete points and $\tau$ is the continuous interpolation parameter.
 
-El uso de PCHIP es especialmente adecuado porque preserva mejor la forma local de la trayectoria y evita oscilaciones artificiales. Esto es importante para el vehículo autónomo, ya que una referencia demasiado ondulada o con cambios bruscos de curvatura puede dificultar el seguimiento estable por parte del controlador.
+The use of PCHIP is especially appropriate because it preserves the local shape of the trajectory better and avoids artificial oscillations. This is important for the autonomous vehicle, since a reference that is too wavy or has abrupt curvature changes may make stable tracking more difficult for the controller.
 
-### 2.9 Visualización final de la trayectoria
+### 2.9 Final trajectory visualization
 
 ```matlab
 load distance_new_qcar2.mat;
@@ -447,22 +450,22 @@ path_x_dijkstra  = path_x_smooth(:);
 path_y_dijkstra  = path_y_smooth(:);
 ```
 
-### Figura del mapa base con nodos del grafo
+### Figure of the base map with graph nodes
 
-![Mapa base con nodos y conectividad del grafo](/assets/img/Grfos.jpeg)
+![Base map with graph nodes and connectivity](/assets/img/Grfos.jpeg)
 
-**Descripción técnica de la figura.**  
-La figura muestra el mapa de competencia utilizado para construir el grafo del sistema de planeación. Sobre el circuito se colocaron nodos numerados en posiciones clave del entorno: cambios de curvatura, entradas y salidas de intersecciones, conexiones entre lazo externo e interno y zonas cercanas a eventos viales. A partir de estas coordenadas se construyó la estructura topológica del problema.
+**Technical description of the figure.**
+The figure shows the competition map used to construct the planning system graph. Numbered nodes were placed over the circuit at key positions of the environment: curvature changes, entrances and exits of intersections, connections between the outer and inner loops, and zones near relevant road events. From these coordinates, the topological structure of the problem was constructed.
 
-### Figura de trayectoria global generada
+### Figure of the generated global trajectory
 
-![Trayectoria global generada para el QCar 2 virtual](/assets/img/MapaVirtualGenerado.jpeg)
+![Generated global trajectory for the virtual QCar 2](/assets/img/MapaVirtualGenerado.jpeg)
 
-**Descripción técnica de la figura.**  
-La línea roja representa la trayectoria global final que seguiría el QCar 2 virtual dentro del entorno de simulación. Esta trayectoria se obtuvo al resolver un problema de optimización sobre el grafo dirigido del mapa y, posteriormente, suavizar la ruta discreta mediante interpolación PCHIP, con el fin de generar una referencia continua y físicamente más adecuada para el seguimiento del vehículo. Por su parte, la línea punteada negra corresponde al marco espacial del entorno utilizado como base de calibración. Es importante señalar que esta trayectoria se presenta únicamente como un ejemplo de planeación entre el nodo 1 y el nodo 44.
+**Technical description of the figure.**
+The red line represents the final global trajectory that the virtual QCar 2 would follow within the simulation environment. This trajectory was obtained by solving an optimization problem over the directed graph of the map and then smoothing the discrete route through PCHIP interpolation, in order to generate a continuous reference that is physically more suitable for vehicle tracking. The black dotted line corresponds to the spatial frame of the environment used as the calibration reference. It is important to note that this trajectory is presented only as an example of planning between node 1 and node 44.
 
-## Interpretación de esta sección dentro del sistema completo
+## Interpretation of this section within the complete system
 
-La planeación global constituye la columna vertebral del comportamiento nominal del vehículo. Todos los demás módulos del sistema —detección de objetos, lógica de señales, profundidad, direccionales y evasión— se montan sobre esta referencia de trayectoria. Si la planeación no fuera consistente, estable o geométricamente razonable, el resto del pipeline trabajaría sobre una base defectuosa.
+Global planning constitutes the backbone of the nominal behavior of the vehicle. All other modules of the system — object detection, signal logic, depth estimation, turn signals, and obstacle avoidance — are built on top of this trajectory reference. If the planning were not consistent, stable, or geometrically reasonable, the rest of the pipeline would operate on a defective foundation.
 
-Por ello, esta sección no solo define una ruta, sino que construye un espacio estructurado de navegación donde cada segmento tiene sentido geométrico y también operacional. La combinación de coordenadas extraídas del mapa, aristas dirigidas, penalizaciones viales, corrección geométrica e interpolación final permite obtener una trayectoria que no solo conecta un origen y un destino, sino que también es apropiada para ser seguida por el vehículo en un entorno urbano simulado.
+For this reason, this section does not merely define a route, but rather constructs a structured navigation space where each segment has both geometric and operational meaning. The combination of coordinates extracted from the map, directed edges, road penalties, geometric correction, and final interpolation makes it possible to obtain a trajectory that not only connects an origin and a destination, but is also appropriate to be followed by the vehicle in a simulated urban environment.
