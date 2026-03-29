@@ -28,7 +28,7 @@ search:
 
 # Ejemplo de enlace auxiliar (aparece arriba a la derecha)
 aux_links:
-  "Repositorio en GitHub":
+  "Repository on GitHub":
     - "https://github.com/emanuelIbimcs27/VehiculosAutonomos.git"
 
 # Enlaces
