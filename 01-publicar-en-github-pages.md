@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Matlab Qcar Sensores
+title: Matlab Qcar Sensors
 nav_order: 3
 has_children: true
 permalink: /QcarSensors/
