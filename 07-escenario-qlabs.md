@@ -7,13 +7,13 @@ permalink: /CPS/escenario-qlabs/
 ---
 # Generación del Escenario en QLabs
 
-## 9. Generación programática del escenario de competencia en QLabs
+## 7. Generación programática del escenario de competencia en QLabs
 
 Además del diseño del algoritmo de conducción autónoma, una parte esencial del proyecto fue la construcción del entorno de simulación donde dicho algoritmo sería validado. Para ello se desarrolló un script encargado de generar programáticamente el escenario de competencia dentro de **QLabs**, incorporando no solo la infraestructura geométrica del mapa, sino también elementos dinámicos y estáticos relevantes para el comportamiento del vehículo: muros, señalización, cruces peatonales, semáforos, una persona estática para simulación de pickup, un peatón dinámico cruzando la calle y un cono de tráfico como obstáculo de la competencia.
 
 Desde una perspectiva de ingeniería, este script no cumple únicamente una función estética o visual. Su verdadero propósito es crear un entorno de pruebas controlado, reproducible y suficientemente rico como para evaluar el desempeño del vehículo en condiciones cercanas a las de una escena urbana simplificada. De esta manera, el escenario deja de ser un fondo pasivo y se convierte en una parte activa de la validación del sistema.
 
-### 9.1 Objetivo del generador de escenario
+### 7.1 Objetivo del generador de escenario
 
 El objetivo general de esta rutina es construir una instancia del entorno en la que el vehículo pueda ser probado frente a distintas situaciones de navegación. Estas situaciones incluyen:
 
@@ -26,7 +26,7 @@ El objetivo general de esta rutina es construir una instancia del entorno en la 
 
 En términos funcionales, este módulo proporciona el contexto físico y lógico dentro del cual opera el algoritmo de self-driving. Por ello, su papel dentro del sistema completo es fundamental.
 
-### 9.2 Selección del punto de spawn del vehículo
+### 7.2 Selección del punto de spawn del vehículo
 
 ```matlab
 %% Configurable Params
@@ -44,7 +44,7 @@ Este parámetro permite seleccionar la posición inicial del QCar. Existen dos c
 
 Esto es útil porque el mismo escenario puede usarse para distintos propósitos. Una posición de calibración sirve para validaciones iniciales de sensores, referencia espacial o arranque del sistema, mientras que la posición del taxi hub permite ejecutar la lógica completa de navegación y pickup desde un punto operativo más representativo del flujo del proyecto.
 
-### 9.3 Función de limpieza y manejo de recursos
+### 7.3 Función de limpieza y manejo de recursos
 
 ```matlab
 function cleanupQLabs(qlabs)
@@ -54,7 +54,7 @@ end
 
 La función de limpieza se encarga de cerrar correctamente la conexión con QLabs. Este tipo de rutina es importante porque evita que queden sesiones abiertas o actores residuales en memoria después de una ejecución fallida o de una terminación abrupta. Desde el punto de vista de robustez experimental, cerrar correctamente la sesión garantiza que el siguiente experimento comience desde un estado limpio.
 
-### 9.4 Controlador dinámico de tráfico y peatón
+### 7.4 Controlador dinámico de tráfico y peatón
 
 Una de las piezas más relevantes del script es la función `trafficLightController`, encargada de manejar simultáneamente el estado de los semáforos y el movimiento del peatón dinámico.
 
@@ -113,7 +113,7 @@ function trafficLightController(qlabs)
 end
 ```
 
-### 9.5 Lógica temporal del sistema semafórico
+### 7.5 Lógica temporal del sistema semafórico
 
 La variable `intersection1Flag` funciona como un índice de estado discreto que evoluciona cíclicamente según:
 
@@ -137,7 +137,7 @@ $$
 
 se obtiene una señal temporal suficientemente lenta para ser capturada y procesada por la percepción del vehículo, pero suficientemente dinámica como para poner a prueba su lógica de decisión.
 
-### 9.6 Movimiento cíclico del peatón dinámico
+### 7.6 Movimiento cíclico del peatón dinámico
 
 El peatón asociado al actor 20 se mueve entre dos puntos:
 
@@ -156,7 +156,7 @@ La variable booleana `hacia_B` controla el sentido del movimiento. Este diseño 
 
 Desde el punto de vista de validación, esta elección es muy conveniente porque el evento peatonal no depende del azar: siempre ocurre en la misma zona del mapa, de forma repetible, y con una velocidad controlada.
 
-### 9.7 Configuración del entorno de MATLAB y QLabs
+### 7.7 Configuración del entorno de MATLAB y QLabs
 
 Antes de construir el escenario, el script verifica que la librería de QLabs esté en el path de MATLAB y detiene posibles modelos RT previamente activos:
 
@@ -183,7 +183,7 @@ num_destroyed = qlabs.destroy_all_spawned_actors();
 
 Estas operaciones son importantes porque garantizan que cada ejecución del experimento comience desde un entorno limpio y consistente. Esto evita resultados contaminados por objetos residuales o configuraciones previas del simulador.
 
-### 9.8 Construcción del piso y referencia geométrica del escenario
+### 7.8 Construcción del piso y referencia geométrica del escenario
 
 ```matlab
 x_offset = 0.13;
@@ -194,7 +194,7 @@ hFloor.spawn_degrees([x_offset, y_offset, 0.001],[0, 0, -90]);
 
 Aquí se define el piso del escenario con una traslación $(x_{offset}, y_{offset})$ y una rotación de \(-90^\circ\). Esta etapa es importante porque establece el marco físico sobre el cual se montan el resto de los elementos del escenario. La correcta ubicación del piso permite que la distribución de muros, señales y actores corresponda con las coordenadas utilizadas por la trayectoria del vehículo y por el mapa topológico de nodos.
 
-### 9.9 Construcción de muros y límites físicos
+### 7.9 Construcción de muros y límites físicos
 
 El script genera múltiples muros para delimitar el circuito:
 
@@ -214,7 +214,7 @@ end
 
 Estos muros cumplen una doble función. Por un lado, reproducen la geometría del circuito de competencia. Por otro, actúan como elementos físicos de referencia visual y espacial dentro de QLabs. Desactivar la dinámica de los muros implica que estos se comportan como elementos estáticos del entorno, lo cual es apropiado porque su propósito es delimitar la infraestructura y no interactuar dinámicamente con el vehículo.
 
-### 9.10 Señalización vertical y horizontal
+### 7.10 Señalización vertical y horizontal
 
 El escenario incorpora varios tipos de señalización. Entre ellos:
 
@@ -247,7 +247,7 @@ myCrossWalk.spawn_degrees([-2 + x_offset, -1.475 + y_offset, 0.01], ...
 
 La presencia explícita de estos elementos es clave, ya que el modelo de percepción y la lógica de tránsito del vehículo dependen directamente de ellos. En otras palabras, el escenario fue diseñado para contener exactamente los objetos que el pipeline de self-driving necesita detectar e interpretar.
 
-### 9.11 Persona estática para simulación de pickup
+### 7.11 Persona estática para simulación de pickup
 
 ```matlab
 hPersonStatic = QLabsPerson(qlabs);
@@ -265,7 +265,7 @@ Esta persona estática representa al pasajero que el vehículo debe simular reco
 
 Desde el punto de vista del proyecto, este actor introduce una lógica de alto nivel relacionada con el caso de uso taxi autónomo.
 
-### 9.12 Persona dinámica cruzando la calle
+### 7.12 Persona dinámica cruzando la calle
 
 ```matlab
 hPersonObstacle = QLabsPerson(qlabs);
@@ -277,7 +277,7 @@ hPersonObstacle.spawn_id_degrees(20, LOC_A_OBSTACULO, [0, 0, -180], [0.1, 0.1, 0
 
 Este peatón es el actor que cruza repetidamente un paso peatonal. Su función es alimentar la lógica de frenado y validación peatonal del vehículo. El hecho de que se le asigne un identificador propio (`ID 20`) permite que el controlador dinámico lo localice y actualice su posición de forma consistente.
 
-### 9.13 Obstáculo tipo cono
+### 7.13 Obstáculo tipo cono
 
 ```matlab
 hTrafficCone = QLabsTrafficCone(qlabs);
@@ -294,7 +294,7 @@ El cono representa un obstáculo físico de la competencia y es precisamente el 
 
 Desde el punto de vista experimental, este actor es muy valioso porque permite validar una reacción local de navegación sin tener que rediseñar la ruta global.
 
-### 9.14 Cámaras del entorno
+### 7.14 Cámaras del entorno
 
 El script también genera cámaras libres para observación y depuración:
 
@@ -318,7 +318,7 @@ camera2.spawn_degrees (camera2Loc, camera2Rot);
 
 Estas cámaras no forman parte de la lógica autónoma del vehículo, pero sí son muy importantes para documentar resultados, inspeccionar la escena y verificar visualmente el comportamiento del sistema durante la simulación.
 
-### 9.15 Spawn final del QCar y arranque del modelo RT
+### 7.15 Spawn final del QCar y arranque del modelo RT
 
 El vehículo puede spawnearse en dos posiciones definidas:
 

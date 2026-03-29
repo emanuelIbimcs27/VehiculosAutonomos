@@ -1,19 +1,19 @@
 ---
 layout: default
 title: Lógica Avanzada de Tráfico y Seguridad
-nav_order: 6
+nav_order: 8
 parent: CPS IoT Competition 2026
 permalink: /CPS/logica-avanzada-trafico/
 ---
 # Lógica Avanzada de Tráfico y Seguridad
 
-## 10. Lógica unificada de señales, semáforos, peatón de pickup y frenado reglamentario: `trafficSignsLogic`
+## 11. Lógica unificada de señales, semáforos, peatón de pickup y frenado reglamentario: `trafficSignsLogic`
 
 Conforme el proyecto fue evolucionando, la lógica del vehículo dejó de limitarse a reaccionar únicamente ante señales simples como STOP, YIELD o glorieta. Fue necesario desarrollar una capa de decisión más avanzada, capaz de integrar varios eventos del entorno dentro de una sola función: señales reglamentarias, semáforos, detección de un pasajero para pickup y una bandera externa de frenado peatonal.
 
 La función `trafficSignsLogic` representa precisamente esa evolución. Se trata de un bloque de decisión híbrido que combina percepción visual, temporización, memoria interna y jerarquía de prioridades para determinar la velocidad final del vehículo en función del contexto observado.
 
-### 10.1 Objetivo de la función
+### 11.1 Objetivo de la función
 
 La función recibe:
 
@@ -42,7 +42,7 @@ El objetivo es que el vehículo pueda:
 - aproximarse y detenerse para simular la recolección de un pasajero,
 - responder adecuadamente al estado de los semáforos y decidir cuándo comprometerse a cruzar una intersección.
 
-### 10.2 Código completo
+### 11.2 Código completo
 
 ```matlab
 function [speed_out, stop_ligth]= trafficSignsLogic(speed_in, detections, t, pedestrian_flag)
@@ -258,7 +258,7 @@ end
 end
 ```
 
-### 10.3 Uso de variables persistentes y memoria temporal
+### 11.3 Uso de variables persistentes y memoria temporal
 
 La función se apoya en varias variables persistentes:
 
@@ -280,7 +280,7 @@ $$
 
 donde $\mathbf{x}_k$ representa el estado interno de la lógica en el instante $k$.
 
-### 10.4 Detección base de objetos y semántica del entorno
+### 11.4 Detección base de objetos y semántica del entorno
 
 Durante cada iteración, la función recorre las diez detecciones disponibles:
 
@@ -321,7 +321,7 @@ $$
 
 Estos criterios permiten que la misma detección visual se interprete de forma distinta según su posición relativa. Por ejemplo, una persona a la derecha puede representar un pasajero esperando para pickup, mientras que una detección frontal puede representar una amenaza inmediata sobre la trayectoria del vehículo.
 
-### 10.5 Lógica STOP
+### 11.5 Lógica STOP
 
 La condición de activación de STOP fue:
 
@@ -355,7 +355,7 @@ $$
 
 representando el estado de detención o luz de freno.
 
-### 10.6 Lógica YIELD
+### 11.6 Lógica YIELD
 
 La condición para ceda el paso es:
 
@@ -377,7 +377,7 @@ donde $t_y$ es el instante de activación de YIELD.
 
 Esto reproduce una lógica menos estricta que la de STOP, pero suficiente para obligar a una pausa breve antes de continuar.
 
-### 10.7 Lógica de glorieta
+### 11.7 Lógica de glorieta
 
 La señal de glorieta se detecta con:
 
@@ -393,7 +393,7 @@ $$
 
 Esta reducción modela una conducción más prudente en zonas circulares, donde el vehículo debe navegar con menor velocidad para mantener estabilidad y control.
 
-### 10.8 Lógica de persona para pickup
+### 11.8 Lógica de persona para pickup
 
 La detección de una persona candidata a pickup se basa en:
 
@@ -427,7 +427,7 @@ $$
 
 Finalmente, la maniobra termina y se marca como completada. Esto implementa una secuencia creíble de acercamiento y parada de servicio.
 
-### 10.9 Lógica de semáforo y máquina de estados WAIT/GO
+### 11.9 Lógica de semáforo y máquina de estados WAIT/GO
 
 El control de semáforo se estructuró como una máquina de estados con dos modos:
 
@@ -481,7 +481,7 @@ $$
 
 Esta lógica evita un comportamiento irreal como detenerse a mitad de la intersección si el color cambia mientras el vehículo ya está cruzando.
 
-### 10.10 Prioridad máxima de la bandera peatonal externa
+### 11.10 Prioridad máxima de la bandera peatonal externa
 
 La primera condición que se revisa dentro de la función es:
 
@@ -497,13 +497,13 @@ Esto significa que cualquier instrucción externa de frenado peatonal tiene prio
 
 ---
 
-## 11. Capa robusta de frenado de seguridad basada en detección y profundidad: `pedestrianStopLogic`
+## 12. Capa robusta de frenado de seguridad basada en detección y profundidad: `pedestrianStopLogic`
 
 Para reforzar la seguridad del sistema se implementó una función específica llamada `pedestrianStopLogic`. Aunque originalmente se pensó para el caso de una persona cruzando, en su forma actual funciona como una capa general de seguridad frontal, combinando detección visual con profundidad para decidir si existe un obstáculo próximo frente al vehículo.
 
 Esta función es especialmente importante porque introduce una verificación adicional independiente de la lógica de señales. Su función no es interpretar normas de tráfico, sino proteger al vehículo frente a un riesgo inmediato.
 
-### 11.1 Código completo
+### 12.1 Código completo
 
 ```matlab
 function stop_flag = pedestrianStopLogic(detections, depth_frame)
@@ -583,7 +583,7 @@ stop_flag = stop_state;
 end
 ```
 
-### 11.2 Fase 1: gating por detección visual
+### 12.2 Fase 1: gating por detección visual
 
 La primera etapa verifica si existe un objeto visualmente válido en la región frontal. Las condiciones usadas fueron:
 
@@ -610,7 +610,7 @@ $$
 
 Si al menos una detección cumple estas condiciones, la variable `valid_object` se activa. Esto filtra el problema a objetos plausiblemente relevantes frente al vehículo.
 
-### 11.3 Fase 2: validación espacial mediante ROI en depth
+### 12.3 Fase 2: validación espacial mediante ROI en depth
 
 Una vez que existe evidencia visual, la función analiza una región fija del mapa de profundidad:
 
@@ -628,7 +628,7 @@ $$
 
 entonces la decisión espacial se toma únicamente a partir de ese subconjunto de píxeles válidos del mapa depth.
 
-### 11.4 Uso del percentil 10 como estimador robusto
+### 12.4 Uso del percentil 10 como estimador robusto
 
 En lugar de utilizar el mínimo absoluto de profundidad, la función ordena los valores y toma el percentil 10:
 
@@ -652,7 +652,7 @@ $$
 d_{10\%} < 0.5
 $$
 
-### 11.5 Histéresis temporal
+### 12.5 Histéresis temporal
 
 La activación del frenado no depende de una sola observación instantánea, sino de una lógica con histéresis temporal. Se emplean dos contadores:
 
@@ -687,7 +687,7 @@ es decir, después de cinco frames seguros consecutivos.
 
 Esta histéresis reduce el efecto del ruido y evita oscilaciones rápidas entre frenar y avanzar.
 
-### 11.6 Salida del módulo y acoplamiento con la lógica principal
+### 12.6 Salida del módulo y acoplamiento con la lógica principal
 
 El resultado final es:
 

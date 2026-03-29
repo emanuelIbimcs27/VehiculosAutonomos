@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Explicación de Simulink
-nav_order: 8
+nav_order: 9
 parent: CPS IoT Competition 2026
 permalink: /CPS/Simulink/
 ---
