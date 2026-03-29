@@ -6,27 +6,26 @@ has_children: true
 permalink: /CPS/
 ---
 
-# Metodología de Diseño y Validación del Algoritmo de Self-Driving para la CPS IoT Competition 2026
+# Methodology for the Design and Validation of the Self-Driving Algorithm for the CPS IoT Competition 2026
 
-## Introducción
+## Introduction
 
-El desarrollo presentado en esta sección corresponde al diseño, integración y validación de un algoritmo de conducción autónoma implementado para el entorno virtual de **Quanser City** utilizando el **QCar 2 virtual** dentro de **QLabs**, con una arquitectura principal desarrollada en **MATLAB/Simulink**. La solución fue concebida para la **CPS IoT Self-Driving Competition 2026**, tomando como base el entorno de competencia y extendiéndolo con módulos propios de planeación, percepción visual, estimación de profundidad, lógica reglamentaria y evasión de obstáculos.
+The work presented in this section corresponds to the design, integration, and validation of an autonomous driving algorithm implemented in the **Quanser City** virtual environment using the **virtual QCar 2** within **QLabs**, with a main architecture developed in **MATLAB/Simulink**. The solution was conceived for the **CPS IoT Self-Driving Competition 2026**, taking the competition environment as its foundation and extending it with custom modules for path planning, visual perception, depth estimation, traffic-rule logic, and obstacle avoidance.
 
-Desde una perspectiva de ingeniería de sistemas autónomos, el vehículo no fue tratado como un simple bloque de seguimiento de trayectoria, sino como una arquitectura jerárquica compuesta por varias capas funcionales. En primer lugar, fue necesario definir la parametrización del vehículo virtual y las condiciones temporales de operación de cada subsistema. Posteriormente, se diseñó una estrategia de planeación global de trayectoria basada en grafos dirigidos y penalizaciones viales. Sobre esta base se incorporó un sistema de percepción visual basado en una red neuronal entrenada específicamente para detectar objetos presentes en el entorno de Quanser City. Finalmente, se añadieron módulos de interpretación espacial y toma de decisiones para que el vehículo pudiera reaccionar frente a señales y obstáculos.
+From the perspective of autonomous systems engineering, the vehicle was not treated as a simple trajectory-following block, but rather as a hierarchical architecture composed of multiple functional layers. First, it was necessary to define the parametrization of the virtual vehicle and the timing conditions under which each subsystem would operate. Next, a global trajectory planning strategy based on directed graphs and road-related penalties was designed. On top of this foundation, a visual perception system was incorporated using a neural network specifically trained to detect objects present in the Quanser City environment. Finally, spatial interpretation and decision-making modules were added so that the vehicle could react to traffic signs and obstacles.
 
-Una de las contribuciones más importantes del proyecto fue el diseño de un pipeline híbrido entre Simulink y Python. Simulink se utilizó como núcleo de integración y control, mientras que Python funcionó como servicio externo de inferencia para la red neuronal exportada a ONNX. Gracias a esta estrategia, el sistema pudo recibir imágenes desde el entorno virtual, detectar objetos de interés, estimar sus distancias y modificar en tiempo real la velocidad y la dirección del vehículo.
+One of the most important contributions of the project was the design of a hybrid pipeline between Simulink and Python. Simulink was used as the core environment for integration and control, while Python operated as an external inference service for the neural network exported to ONNX. Thanks to this strategy, the system was able to receive images from the virtual environment, detect relevant objects, estimate their distances, and modify the vehicle’s speed and steering in real time.
 
 ---
 
-## Arquitectura general de la solución
+## General architecture of the solution
 
-La solución implementada se estructuró en varios niveles funcionales que trabajan de manera coordinada. En el primer nivel se ubica la **parametrización del vehículo**, donde se definen tiempos de muestreo, ganancias de control, configuraciones del entorno y parámetros geométricos. En el segundo nivel se encuentra la **planeación global**, encargada de calcular una trayectoria óptima entre un nodo inicial y un nodo objetivo sobre el mapa de competencia. En el tercer nivel se ubica la **percepción visual**, implementada con una red neuronal YOLOv8 entrenada para reconocer objetos del escenario. En el cuarto nivel se incluye la **estimación de profundidad**, cuyo objetivo es transformar cada detección bidimensional en una detección con significado espacial. Finalmente, en el quinto nivel se encuentra la **toma de decisiones**, donde se implementan reglas de comportamiento frente a señales y obstáculos.
+The implemented solution was structured into several functional levels that operate in a coordinated manner. At the first level is the **vehicle parametrization**, where sampling times, control gains, environment configurations, and geometric parameters are defined. At the second level is the **global planning** module, responsible for computing an optimal trajectory between an initial node and a target node on the competition map. At the third level lies the **visual perception** module, implemented using a YOLOv8 neural network trained to recognize objects in the environment. At the fourth level is the **depth estimation** stage, whose objective is to transform each two-dimensional detection into a detection with spatial meaning. Finally, at the fifth level is the **decision-making** stage, where behavioral rules in response to signs and obstacles are implemented.
 
-Esta arquitectura puede representarse conceptualmente como una tubería de procesamiento:
+This architecture can be conceptually represented as the following processing pipeline:
 
 $$
-\text{Mapa} \rightarrow \text{Planeación} \rightarrow \text{Percepción} \rightarrow \text{Profundidad} \rightarrow \text{Decisión} \rightarrow \text{Control}
+\text{Map} \rightarrow \text{Planning} \rightarrow \text{Perception} \rightarrow \text{Depth} \rightarrow \text{Decision} \rightarrow \text{Control}
 $$
 
-Desde el punto de vista de navegación autónoma, esta descomposición es importante porque separa claramente tres preguntas fundamentales del problema. La planeación responde **por dónde debe ir el vehículo**. La percepción responde **qué hay en el entorno**. La lógica de decisión responde **qué debe hacer el vehículo ante lo que percibe**. Esta estructura modular facilita la validación individual de cada componente y fortalece la robustez global del sistema.
-
+From the point of view of autonomous navigation, this decomposition is important because it clearly separates three fundamental questions of the problem. Planning answers **where the vehicle should go**. Perception answers **what is present in the environment**. Decision logic answers **what the vehicle should do based on what it perceives**. This modular structure facilitates the individual validation of each component and strengthens the overall robustness of the system.

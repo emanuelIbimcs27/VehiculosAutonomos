@@ -1,20 +1,22 @@
 ---
 layout: default
-title: Parametrización del QCar 2 Virtual
+title: Parameterization of the QCar 2 Virtual
 nav_order: 1
 parent: CPS IoT Competition 2026
 permalink: /CPS/parametrizacion-qcar/
 ---
+Claro. Aquí está esa parte en **inglés**, lista para copiar y pegar. Está basada en el texto que compartiste en tu archivo adjunto. 
 
-# Parametrización del QCar 2 Virtual
+````markdown id="1r2w9k"
+# Virtual QCar 2 Parametrization
 
-## 1. Parametrización del QCar 2 virtual y definición del entorno
+## 1. Virtual QCar 2 Parametrization and Environment Definition
 
-La primera etapa del desarrollo consistió en configurar el vehículo virtual y todos los parámetros base del stack. Para ello se utilizó un script de inicialización en MATLAB donde se establece el tipo de mapa, el tipo de QCar, los tiempos de muestreo de cada subsistema, las ganancias del controlador de dirección, los parámetros de estimación y los archivos de calibración.
+The first stage of the development consisted of configuring the virtual vehicle and all the base parameters of the stack. For this purpose, an initialization script in MATLAB was used, where the map type, the QCar type, the sampling times of each subsystem, the steering controller gains, the estimation parameters, and the calibration files are defined.
 
-Esta etapa es fundamental porque, antes de que el vehículo pueda planear, percibir o tomar decisiones, debe existir una base consistente sobre la cual opere el sistema completo. En un entorno de simulación como QLabs, una mala definición de tiempos de muestreo, ganancias o referencias geométricas puede traducirse en comportamientos inestables, errores de sincronización o respuestas inconsistentes del controlador. Por ello, la parametrización del QCar constituye el punto de partida de toda la arquitectura de self-driving.
+This stage is fundamental because, before the vehicle can plan, perceive, or make decisions, there must be a consistent foundation on which the entire system operates. In a simulation environment such as QLabs, an incorrect definition of sampling times, gains, or geometric references can lead to unstable behavior, synchronization errors, or inconsistent controller responses. For this reason, QCar parametrization constitutes the starting point of the entire self-driving architecture.
 
-### 1.1 Definición del tipo de mapa y tipo de vehículo
+### 1.1 Definition of the map type and vehicle type
 
 ```matlab
 clear all;
@@ -22,13 +24,13 @@ clear all;
 %% User configurable parameters
 map_type = 1;
 qcar_types = 1;
-```
+````
 
-En este bloque se definen dos parámetros fundamentales. El primero, `map_type = 1`, indica que se está trabajando sobre el mapa grande del entorno SDCS. El segundo, `qcar_types = 1`, selecciona la configuración correspondiente al **QCar virtual**. Este detalle es importante porque el mismo archivo contempla una diferenciación entre plataforma virtual y plataforma física, lo cual deja preparada la arquitectura para una posible migración futura a hardware real.
+In this block, two fundamental parameters are defined. The first one, `map_type = 1`, indicates that the large SDCS map is being used. The second one, `qcar_types = 1`, selects the configuration corresponding to the **virtual QCar**. This detail is important because the same file distinguishes between virtual and physical platforms, which leaves the architecture prepared for a possible future migration to real hardware.
 
-Desde el punto de vista de diseño, esta distinción permite desacoplar parámetros de simulación y parámetros físicos. Es decir, el stack fue concebido desde el inicio con una estructura suficientemente flexible como para reutilizar el mismo flujo general de trabajo en distintos escenarios, ajustando únicamente las constantes específicas de cada plataforma.
+From a design perspective, this distinction makes it possible to decouple simulation parameters from physical parameters. In other words, the stack was conceived from the beginning with a structure flexible enough to reuse the same general workflow in different scenarios, adjusting only the constants specific to each platform.
 
-### 1.2 Definición de tiempos de muestreo
+### 1.2 Definition of sampling times
 
 ```matlab
 %% Setting Qcar Variables
@@ -44,33 +46,33 @@ cameraStepSize = 3e-2;
 NN_Sample_Time = RealSense_Sample_Time*1;
 ```
 
-Este bloque fija la base temporal del sistema. El controlador principal opera con un tiempo de muestreo de
+This block defines the temporal foundation of the system. The main controller operates with a sampling time of
 
 $$
 T_c = \frac{1}{500}\ \text{s}
 $$
 
-lo que equivale a una frecuencia de 500 Hz. A partir de ese periodo base se derivan los tiempos de muestreo de los demás subsistemas, como cámaras, LiDAR, visualización y red neuronal.
+which is equivalent to a frequency of 500 Hz. From this base period, the sampling times of the other subsystems are derived, including cameras, LiDAR, visualization, and the neural network.
 
-Desde el punto de vista de sistemas discretos, esto significa que el tiempo del controlador se toma como referencia común, y todos los demás módulos operan como múltiplos enteros o aproximaciones alineadas a ese periodo. Esta decisión evita inconsistencias temporales entre sensores, controladores y módulos de procesamiento.
+From the perspective of discrete-time systems, this means that the controller time is taken as the common reference, and all other modules operate as integer multiples or aligned approximations of that period. This decision prevents temporal inconsistencies among sensors, controllers, and processing modules.
 
-Por ejemplo, si un sensor visual opera aproximadamente a 30 Hz, entonces su tiempo de muestreo ideal sería cercano a:
+For example, if a visual sensor operates at approximately 30 Hz, then its ideal sampling time would be close to:
 
 $$
 T_v \approx 0.033\ \text{s}
 $$
 
-En el código, ese tiempo se ajusta al múltiplo más cercano del periodo del controlador, mediante:
+In the code, that time is adjusted to the nearest multiple of the controller period through:
 
 $$
 T_v = T_c \cdot \left\lceil \frac{0.033}{T_c} \right\rceil
 $$
 
-Esto garantiza que el sistema conserve coherencia temporal interna dentro de Simulink.
+This guarantees that the system preserves internal temporal consistency within Simulink.
 
-La variable `NN_Sample_Time` se iguala al tiempo de la cámara RealSense, lo cual tiene sentido porque la inferencia visual no debe ejecutarse a una frecuencia independiente arbitraria, sino sincronizada con la adquisición de las imágenes sobre las que opera.
+The variable `NN_Sample_Time` is set equal to the RealSense camera sampling time, which makes sense because visual inference should not run at an arbitrary independent frequency, but rather in synchronization with the acquisition of the images on which it operates.
 
-### 1.3 Selección del punto de calibración
+### 1.3 Selection of the calibration point
 
 ```matlab
 if map_type == 1
@@ -82,17 +84,17 @@ else
 end
 ```
 
-La variable `cal_pos` define la posición de calibración usada como referencia del entorno. En este caso, al trabajar sobre el mapa grande, se selecciona el vector:
+The variable `cal_pos` defines the calibration position used as the reference for the environment. In this case, when working with the large map, the selected vector is:
 
 $$
 \mathbf{p}_{cal} = [0,\ 2,\ 0]
 $$
 
-Este punto funciona como referencia espacial para alinear la representación del mapa, la trayectoria calculada y los datos derivados de sensores. En otras palabras, no basta con conocer las coordenadas absolutas del vehículo o de los nodos; también es necesario establecer un origen operativo común desde el cual se interprete la geometría del entorno.
+This point functions as a spatial reference to align the map representation, the computed trajectory, and the data derived from sensors. In other words, it is not enough to know the absolute coordinates of the vehicle or the nodes; it is also necessary to establish a common operational origin from which the environment geometry is interpreted.
 
-Más adelante, esta referencia reaparece en la visualización de la trayectoria, cuando se ajustan las coordenadas suavizadas restando la posición de calibración. Esto asegura que la ruta se represente correctamente dentro del marco de referencia del escenario.
+Later, this reference reappears in the trajectory visualization, when the smoothed coordinates are adjusted by subtracting the calibration position. This ensures that the route is represented correctly within the reference frame of the scenario.
 
-### 1.4 Ganancias del controlador de dirección
+### 1.4 Steering controller gains
 
 ```matlab
 if qcar_types == 1 % IF VIRTUAL
@@ -104,25 +106,25 @@ elseif qcar_types == 2 % IF PHYSICAL
 end
 ```
 
-En este bloque se definen las ganancias del controlador PD de dirección. Para el caso virtual se eligieron:
+This block defines the gains of the PD steering controller. For the virtual case, the selected values were:
 
 $$
 K_p = 1.2,\qquad K_d = 0.6
 $$
 
-Por tanto, el control de dirección puede interpretarse de forma general como:
+Therefore, the steering control law can be interpreted in a general form as:
 
 $$
-u_{\delta}(t) = K_p\,e(t) + K_d\,\dot{e}(t)
+u_{\delta}(t) = K_p,e(t) + K_d,\dot{e}(t)
 $$
 
-donde $e(t)$ representa el error de trayectoria o el error de orientación respecto a la referencia.
+where $e(t)$ represents the trajectory error or the orientation error with respect to the reference.
 
-La acción proporcional corrige el error principal, mientras que la acción derivativa amortigua cambios rápidos y reduce oscilaciones. Esto es particularmente importante en un vehículo autónomo que sigue una trayectoria curva, ya que un control puramente proporcional puede producir sobreoscilación o correcciones demasiado agresivas en curvas e intersecciones.
+The proportional action corrects the main error, while the derivative action damps rapid changes and reduces oscillations. This is particularly important in an autonomous vehicle following a curved trajectory, since a purely proportional controller may produce overshoot or excessively aggressive corrections in curves and intersections.
 
-El hecho de que exista una configuración distinta para `qcar_types == 2` también es importante. Sugiere que la plataforma física presenta una dinámica diferente a la del simulador, por lo que las ganancias deben adaptarse al comportamiento real del sistema.
+The fact that a different configuration exists for `qcar_types == 2` is also important. It suggests that the physical platform presents dynamics different from those of the simulator, so the gains must be adapted to the actual behavior of the system.
 
-### 1.5 Parámetros de filtrado y estimación
+### 1.5 Filtering and estimation parameters
 
 ```matlab
 %% QCar KF + EKF
@@ -149,39 +151,39 @@ if qcar_types == 1 % IF VIRTUAL
 end
 ```
 
-Este fragmento define parámetros de filtros de Kalman y de un filtro de Kalman extendido para el vehículo. Aunque el núcleo del proyecto se centra principalmente en planeación, percepción y toma de decisiones, la inclusión de estos parámetros fortalece la base de estimación del stack y demuestra que el vehículo se encuentra montado sobre una arquitectura más amplia de modelado y fusión de información.
+This fragment defines parameters for Kalman filters and an extended Kalman filter for the vehicle. Although the core of the project focuses mainly on planning, perception, and decision-making, the inclusion of these parameters strengthens the estimation foundation of the stack and shows that the vehicle is built on a broader architecture of modeling and information fusion.
 
-En particular, la longitud efectiva del vehículo se definió como:
+In particular, the effective vehicle length was defined as:
 
 $$
 L = 0.256\ \text{m}
 $$
 
-Este parámetro es importante para modelos cinemáticos tipo bicicleta y para la propagación del estado en un EKF.
+This parameter is important for bicycle-type kinematic models and for state propagation in an EKF.
 
-Las matrices de covarianza también reflejan una decisión de diseño relevante. Si se denota por $\mathbf{Q}$ la covarianza del ruido de proceso y por $\mathbf{R}$ la covarianza del ruido de medición, entonces el filtro opera sobre la lógica clásica de estimación:
-
-$$
-\hat{\mathbf{x}}_{k|k-1} = f(\hat{\mathbf{x}}_{k-1|k-1}, \mathbf{u}_{k-1})
-$$
+The covariance matrices also reflect an important design decision. If $\mathbf{Q}$ denotes the process noise covariance and $\mathbf{R}$ the measurement noise covariance, then the filter operates according to the classical estimation logic:
 
 $$
-\mathbf{P}_{k|k-1} = \mathbf{A}_k \mathbf{P}_{k-1|k-1}\mathbf{A}_k^\top + \mathbf{Q}
-$$
-
-y posteriormente actualiza con la medición:
-
-$$
-\mathbf{K}_k = \mathbf{P}_{k|k-1}\mathbf{H}_k^\top \left(\mathbf{H}_k \mathbf{P}_{k|k-1} \mathbf{H}_k^\top + \mathbf{R}\right)^{-1}
+\hat{\mathbf{x}}*{k|k-1} = f(\hat{\mathbf{x}}*{k-1|k-1}, \mathbf{u}_{k-1})
 $$
 
 $$
-\hat{\mathbf{x}}_{k|k} = \hat{\mathbf{x}}_{k|k-1} + \mathbf{K}_k \left(\mathbf{z}_k - h(\hat{\mathbf{x}}_{k|k-1})\right)
+\mathbf{P}_{k|k-1} = \mathbf{A}*k \mathbf{P}*{k-1|k-1}\mathbf{A}_k^\top + \mathbf{Q}
 $$
 
-Aunque en esta parte de la metodología no se desarrolla toda la implementación del EKF, el hecho de definir sus parámetros deja claro que el sistema fue preparado para trabajar sobre una base formal de estimación del estado.
+and subsequently updates with the measurement:
 
-### 1.6 Carga de archivos de calibración y referencia angular
+$$
+\mathbf{K}*k = \mathbf{P}*{k|k-1}\mathbf{H}_k^\top \left(\mathbf{H}*k \mathbf{P}*{k|k-1} \mathbf{H}_k^\top + \mathbf{R}\right)^{-1}
+$$
+
+$$
+\hat{\mathbf{x}}*{k|k} = \hat{\mathbf{x}}*{k|k-1} + \mathbf{K}_k \left(\mathbf{z}*k - h(\hat{\mathbf{x}}*{k|k-1})\right)
+$$
+
+Although this part of the methodology does not develop the full EKF implementation, the fact that its parameters are defined makes it clear that the system was prepared to operate on a formal state estimation basis.
+
+### 1.6 Loading calibration files and angular reference
 
 ```matlab
 if qcar_types == 1 % FOR VIRTUAL
@@ -196,24 +198,24 @@ range_qcar2 = distance_new_qcar2(2: length(distance_new_qcar2), width(distance_n
 angles_qcar2 = angles_new_qcar2(2: length(angles_new_qcar2), width(angles_new_qcar2)-5);
 ```
 
-Aquí se corrige la orientación del LiDAR con respecto al mapa. Por ejemplo, la rotación del LiDAR al mapa en el caso virtual se fijó como:
+Here, the LiDAR orientation is corrected with respect to the map. For example, the LiDAR-to-map rotation for the virtual case was set as:
 
 $$
 \theta_{L\to M} = -1.5^\circ
 $$
 
-Asimismo, se definió una corrección adicional entre representación virtual y física del LiDAR:
+Likewise, an additional correction between the virtual and physical LiDAR representation was defined as:
 
 $$
 \theta_{virt\to phys} = -7^\circ
 $$
 
-Estas correcciones angulares son indispensables para alinear adecuadamente las referencias espaciales del entorno con la trayectoria calculada y con las visualizaciones posteriores. En un sistema autónomo, una desalineación angular entre el sensor y el mapa puede provocar que los obstáculos o la referencia geométrica se interpreten en posiciones incorrectas, afectando tanto la planeación como la toma de decisiones.
+These angular corrections are indispensable to properly align the spatial references of the environment with the computed trajectory and with subsequent visualizations. In an autonomous system, an angular misalignment between the sensor and the map may cause obstacles or geometric references to be interpreted at incorrect positions, affecting both planning and decision-making.
 
-Los archivos `distance_new_qcar2.mat` y `angles_new_qcar2.mat` almacenan información de distancia y ángulos usada como referencia geométrica del entorno. Al cargarlos, el sistema dispone de una representación consistente del espacio de trabajo sobre la cual puede superponerse la trayectoria planeada.
+The files `distance_new_qcar2.mat` and `angles_new_qcar2.mat` store distance and angle information used as the geometric reference of the environment. Once loaded, the system has a consistent representation of the workspace on which the planned trajectory can be superimposed.
 
-## Rol de esta sección dentro del sistema completo
+## Role of this section within the complete system
 
-La parametrización del QCar 2 virtual constituye la base técnica del sistema completo. Gracias a esta etapa se define una estructura temporal coherente, una referencia espacial clara, un conjunto de ganancias adecuadas para el controlador y una preparación inicial para estimación del estado y alineación sensorial. Todo esto permite que los módulos posteriores —planeación, percepción, profundidad y lógica de decisión— operen sobre una base estable.
+The parametrization of the virtual QCar 2 constitutes the technical foundation of the complete system. Thanks to this stage, a coherent temporal structure, a clear spatial reference, an adequate set of controller gains, and an initial preparation for state estimation and sensor alignment are defined. All of this allows the subsequent modules — planning, perception, depth estimation, and decision logic — to operate on a stable basis.
 
-En otras palabras, esta sección no describe un conjunto de parámetros aislados, sino el marco operacional que hace posible que el resto del algoritmo de self-driving funcione correctamente dentro del entorno virtual de la competencia.
+In other words, this section does not describe an isolated set of parameters, but rather the operational framework that makes it possible for the rest of the self-driving algorithm to function correctly within the virtual competition environment.
