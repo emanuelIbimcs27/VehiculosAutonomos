@@ -16,7 +16,7 @@ En términos generales, el flujo del sistema puede interpretarse como una cadena
 
 ## 1. Bloque de lectura de sensores
 
-![Bloque Read Sensors](sandbox:/mnt/data/BloqueReadSensor.png)
+![Bloque Read Sensors](/assets/img/BloqueReadSensor.png)
 
 **Figura.** Subsistema `Read Sensors` donde se leen las señales internas del QCar, como velocidad, aceleración y giroscopio.
 
@@ -26,7 +26,7 @@ Desde el punto de vista de arquitectura, este bloque representa la interfaz entr
 
 ---
 
-![Bloque Read Sensors - LiDAR y RealSense](sandbox:/mnt/data/BloqueReadSensor1.png)
+![Bloque Read Sensors - LiDAR y RealSense](/assets/img/BloqueReadSensor1.png)
 
 **Figura.** Subsistema complementario de lectura de sensores, donde se capturan los datos del LiDAR y de la cámara RealSense.
 
@@ -38,7 +38,7 @@ Por su parte, el bloque `realsenseCapture` proporciona dos salidas críticas par
 
 ## 2. Bloque de estimación de estado
 
-![Bloque stateEstimation](sandbox:/mnt/data/BloqueProcessing2.png)
+![Bloque stateEstimation](/assets/img/BloqueProcessing2.png)
 
 **Figura.** Bloque `stateEstimation`, encargado de calcular la pose actual del QCar a partir de sensores y comandos del vehículo.
 
@@ -50,7 +50,7 @@ La importancia de este bloque es muy alta dentro del sistema, ya que la pose est
 
 ## 3. Bloques de planeación y control lateral
 
-![Bloques pathPlanner y steeringCommander](sandbox:/mnt/data/BloqueProcessing1.png)
+![Bloques pathPlanner y steeringCommander](/assets/img/BloqueProcessing1.png)
 
 **Figura.** Subsistema de procesamiento lateral compuesto por los bloques `pathPlanner` y `steeringCommander`.
 
@@ -64,7 +64,7 @@ Desde una perspectiva de control, ambos bloques trabajan en conjunto: el `pathPl
 
 ## 4. Bloque de control longitudinal
 
-![Bloque speedController](sandbox:/mnt/data/BloqueProcessing.png)
+![Bloque speedController](/assets/img/BloqueProcessing.png)
 
 **Figura.** Bloque `speedController`, responsable del control de velocidad del QCar.
 
@@ -76,7 +76,7 @@ La lógica de este bloque consiste en transformar una velocidad deseada en una o
 
 ## 5. Bloque de inferencia visual y comunicación con Python
 
-![Bloque de inferencia en Simulink](sandbox:/mnt/data/BloqueSimulink3.png)
+![Bloque de inferencia en Simulink](/assets/img/BloqueSimulink3.png)
 
 **Figura.** Subsistema de comunicación entre Simulink y Python para ejecutar la inferencia del modelo de detección y construir la matriz final de objetos con profundidad.
 
@@ -104,7 +104,7 @@ Además de esta lógica, también cuentas con el bloque `avoid cone`, al que le 
 
 ## 7. Bloque de escritura al QCar y actuación final
 
-![Bloque writeToQCarDAC](sandbox:/mnt/data/BloqueWriteToCar.png)
+![Bloque writeToQCarDAC](/assets/img/BloqueWriteToCar.png)
 
 **Figura.** Bloque `writeToQCarDAC`, encargado de aplicar al vehículo los comandos de motor, dirección y señales luminosas.
 
