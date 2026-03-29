@@ -9,4 +9,4 @@ This repository will be our course page: all the labs conducted in the Cyber-Phy
 
 Contents:
 
-  - [1. Matlab Qcar Sensors](01-publicar-en-github-pages.md)
+  - [1. Matlab Qcar Sensors](01-publicar-en-github-pages copy.md)
