@@ -365,5 +365,3 @@ Los segmentos verdes representan maniobras donde el vehículo debe anunciar un g
 
 Además, el uso del nodo auxiliar **AUX = 48** resulta particularmente valioso en intersecciones complejas, ya que permite modelar giros izquierdos como una secuencia continua y no como una transición brusca entre nodos extremos. En consecuencia, la direccional permanece encendida durante una porción de trayectoria más representativa de la maniobra real.
 
-En conjunto, este procedimiento fortalece considerablemente la arquitectura del proyecto, porque hace que el vehículo no solo siga una ruta de manera correcta, sino que además se comporte como un agente vial más completo, capaz de comunicar sus intenciones de movimiento mediante señales luminosas coherentes con la topología del mapa y con las reglas de tránsito definidas para el entorno.
----
