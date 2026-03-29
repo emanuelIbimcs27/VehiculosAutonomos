@@ -195,11 +195,13 @@ roi = roi(roi > 0);
 
 This means that the depth estimate is based only on the set:
 
+This means that the depth estimate is based only on the set:
+
 $$
 \mathcal{Z}_i =
-\left{
-D(u,v);|;(u,v)\in B_i,\ D(u,v)>0,\ D(u,v)\neq \text{NaN}
-\right}
+\left\{
+D(u,v)\;|\;(u,v)\in B_i,\ D(u,v)>0,\ D(u,v)\neq \text{NaN}
+\right\}
 $$
 
 This filtering is necessary because depth maps may contain null pixels, holes, or undefined readings. If those values were used directly, the estimated distance would be unreliable and could trigger incorrect decisions in the vehicle logic.
