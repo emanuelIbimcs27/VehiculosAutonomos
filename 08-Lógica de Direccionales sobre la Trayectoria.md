@@ -1,55 +1,55 @@
 ---
 layout: default
-title: Lógica de Direccionales sobre la Trayectoria
+title: Directional Logic on the Trajectory
 nav_order: 6
 parent: CPS IoT Competition 2026
 permalink: /CPS/directionalLogic/
 ---
-## Direccionales y Comportamiento Vial
+## Turn Signals and Road Behavior
 
-### Análisis detallado del seccionamiento de la ruta para activación de direccionales
+### Detailed analysis of route segmentation for turn signal activation
 
-La trayectoria generada para el **QCar 2 virtual** no se utilizó únicamente como referencia geométrica de navegación, sino también como base para incorporar comportamiento vial explícito, particularmente la activación de direccionales. Esta decisión fue relevante porque, dentro de un sistema de conducción autónoma orientado a un entorno urbano, no basta con que el vehículo siga correctamente una curva o se mantenga cerca de una trayectoria objetivo; también debe comunicar visualmente sus maniobras cuando entra, sale o cruza intersecciones, cuando cambia de rama dentro de la red vial del mapa o cuando ejecuta un giro reglamentario claramente identificable.
+The trajectory generated for the **virtual QCar 2** was not used solely as a geometric navigation reference, but also as a basis for incorporating explicit road behavior, particularly turn signal activation. This decision was relevant because, within an autonomous driving system designed for an urban-like environment, it is not enough for the vehicle to follow a curve correctly or remain close to a target trajectory; it must also visually communicate its maneuvers when entering, leaving, or crossing intersections, when switching branches within the road network of the map, or when executing a clearly identifiable regulatory turn.
 
-Por esta razón, una vez obtenida la trayectoria global suavizada mediante planeación sobre grafo e interpolación **PCHIP**, se realizó un proceso adicional de segmentación de la ruta. Dicho proceso consistió en determinar qué partes de la trayectoria correspondían a maniobras donde debía encenderse la direccional izquierda y cuáles correspondían a maniobras donde debía encenderse la direccional derecha. Esta capa de procesamiento permitió que el vehículo no solo recorriera el mapa de manera correcta, sino que además lo hiciera con una lógica de señalización coherente con las reglas viales definidas para el entorno.
-
----
-
-### Ejemplo de trayectoria generada del nodo 1 al nodo 30
-
-Como ejemplo de planeación, se presenta una trayectoria calculada entre el **nodo 1** y el **nodo 30**. La figura siguiente muestra la ruta final obtenida para ese recorrido.
-
-![Trayectoria global del nodo 1 al nodo 30](/assets/img/TrayectoriaNodo1a30.jpeg)
-
-**Figura.** Trayectoria global generada como ejemplo de planeación entre el **nodo 1** y el **nodo 30**. La curva roja representa la trayectoria final suavizada que seguiría el **QCar 2 virtual**, mientras que el contorno punteado negro corresponde al marco geométrico de referencia del entorno.
-
-En esta figura se aprecia que la trayectoria recorre una parte importante del circuito, pasando por tramos rectos, curvas amplias y una zona central de mayor complejidad geométrica. Esto confirma que la planeación no produce una simple conexión lineal entre origen y destino, sino una ruta continua físicamente consistente con la topología del mapa. Desde el punto de vista del control, esta curva roja es la referencia nominal que seguiría el vehículo en ausencia de eventos externos como señales, peatones u obstáculos.
-
-Sin embargo, para la lógica de direccionales no basta con conocer la forma global de la trayectoria. Aunque esta curva es continua, la señalización de giro debe decidirse con base en el significado vial de ciertos tramos del camino y no simplemente en la presencia de curvatura. En consecuencia, fue necesario construir una lógica adicional capaz de proyectar reglas de tránsito, definidas originalmente sobre nodos discretos del grafo, sobre la trayectoria continua que realmente sigue el vehículo.
+For this reason, once the global smoothed trajectory had been obtained through graph-based planning and **PCHIP** interpolation, an additional route segmentation process was carried out. This process consisted of determining which parts of the trajectory corresponded to maneuvers where the left turn signal should be activated and which parts corresponded to maneuvers where the right turn signal should be activated. This processing layer allowed the vehicle not only to navigate the map correctly, but also to do so with a signaling logic consistent with the road rules defined for the environment.
 
 ---
 
-### Criterio general para definir las reglas de direccionales
+### Example of generated trajectory from node 1 to node 30
 
-Las reglas de direccionales no se definieron con un criterio geométrico simplista del tipo “si la curva va a la izquierda, entonces prende izquierda” o “si el camino se curva a la derecha, entonces prende derecha”. Ese enfoque habría sido demasiado burdo, ya que una trayectoria suavizada puede presentar curvatura local por razones puramente geométricas sin que ello represente una maniobra vial que deba ser anunciada con una direccional.
+As a planning example, a trajectory calculated between **node 1** and **node 30** is presented. The following figure shows the final route obtained for that path.
 
-Por ejemplo, un vehículo puede recorrer una curva suave simplemente siguiendo la forma natural del carril, sin cambiar de rama ni atravesar una intersección. En ese caso, aunque geométricamente la trayectoria sea curva, vialmente no necesariamente existe una maniobra reglamentaria que requiera señalización. Por el contrario, sí existen transiciones entre nodos del grafo que representan decisiones viales explícitas, tales como:
+![Global trajectory from node 1 to node 30](/assets/img/TrayectoriaNodo1a30.jpeg)
 
-- incorporarse a una nueva rama del mapa,
-- atravesar una intersección,
-- abandonar una trayectoria principal para tomar una salida,
-- cambiar entre un lazo exterior y uno interior,
-- completar un giro prolongado donde la direccional debe mantenerse encendida durante varios subtramos consecutivos.
+**Figure.** Global trajectory generated as a planning example between **node 1** and **node 30**. The red curve represents the final smoothed trajectory that the **virtual QCar 2** would follow, while the black dotted outline corresponds to the geometric reference frame of the environment.
 
-Por esta razón, las reglas fueron definidas sobre la **topología del mapa**, es decir, sobre las transiciones discretas entre nodos que verdaderamente representan maniobras de tránsito.
+In this figure, it can be observed that the trajectory covers an important portion of the circuit, passing through straight segments, wide curves, and a central area of higher geometric complexity. This confirms that the planning stage does not produce a simple linear connection between origin and destination, but rather a continuous route that is physically consistent with the topology of the map. From the control perspective, this red curve is the nominal reference that the vehicle would follow in the absence of external events such as signs, pedestrians, or obstacles.
+
+However, for turn signal logic, it is not enough to know the overall shape of the trajectory. Although this curve is continuous, turn signaling must be decided based on the road-related meaning of certain path segments and not simply on the presence of curvature. As a result, it was necessary to build an additional logic capable of projecting traffic rules, originally defined over discrete graph nodes, onto the continuous trajectory that the vehicle actually follows.
 
 ---
 
-### Reglas de tránsito para activación de direccionales
+### General criterion for defining turn signal rules
 
-Las reglas definidas para el encendido de direccionales fueron las siguientes.
+The turn signal rules were not defined using a simplistic geometric criterion such as “if the curve goes left, then activate the left signal” or “if the path curves right, then activate the right signal.” That approach would have been too crude, because a smoothed trajectory may present local curvature for purely geometric reasons without that necessarily representing a road maneuver that should be announced with a turn signal.
 
-#### Reglas para direccional izquierda
+For example, a vehicle may follow a smooth curve simply by following the natural shape of the lane, without changing branches or crossing an intersection. In that case, even though the trajectory is geometrically curved, from a road-behavior standpoint there is not necessarily a regulatory maneuver that requires signaling. In contrast, there are indeed transitions between graph nodes that represent explicit road decisions, such as:
+
+- merging into a new branch of the map,
+- crossing an intersection,
+- leaving a main trajectory to take an exit,
+- switching between an outer loop and an inner loop,
+- completing an extended turn during which the turn signal should remain active over several consecutive subsegments.
+
+For this reason, the rules were defined over the **topology of the map**, that is, over the discrete transitions between nodes that truly represent traffic maneuvers.
+
+---
+
+### Traffic rules for turn signal activation
+
+The rules defined for turn signal activation were the following.
+
+#### Left turn signal rules
 
 - 7 → 8  
 - 8 → 9  
@@ -64,7 +64,7 @@ Las reglas definidas para el encendido de direccionales fueron las siguientes.
 - 44 → AUX  
 - AUX → 16  
 
-#### Reglas para direccional derecha
+#### Right turn signal rules
 
 - 9 → 41  
 - 13 → 46  
@@ -82,108 +82,108 @@ Las reglas definidas para el encendido de direccionales fueron las siguientes.
 
 ---
 
-### Nodo auxiliar AUX
+### Auxiliary node AUX
 
-En estas reglas, el símbolo **AUX** corresponde al **nodo 48**, ubicado en el centro de la intersección principal del mapa. Este nodo no forma parte de la estructura mínima original del grafo, sino que fue introducido como un nodo auxiliar para mejorar la representación geométrica y semántica de ciertos cruces, principalmente los giros izquierdos más complejos.
+In these rules, the symbol **AUX** corresponds to **node 48**, located at the center of the main intersection on the map. This node is not part of the minimal original graph structure, but was introduced as an auxiliary node to improve the geometric and semantic representation of certain crossings, mainly the more complex left turns.
 
-La importancia de este nodo es considerable. Si una maniobra de cruce izquierdo se representara directamente entre dos nodos extremos, la trayectoria resultante podría verse demasiado abrupta, poco natural o incluso poco representativa de cómo un vehículo realmente atraviesa una intersección. Al forzar el paso de la trayectoria por el nodo auxiliar central, se consigue que la curva se desarrolle de manera más progresiva y que el tramo donde la direccional permanece activa se extienda a lo largo de toda la maniobra, y no únicamente en el instante de conexión entre dos ramas.
+The importance of this node is considerable. If a left-turn crossing were represented directly between two extreme nodes, the resulting trajectory could appear too abrupt, unnatural, or even poorly representative of how a vehicle actually crosses an intersection. By forcing the trajectory to pass through the central auxiliary node, the curve develops more progressively and the section in which the turn signal remains active extends over the entire maneuver, rather than only at the exact instant of connection between two branches.
 
-En otras palabras, el nodo **AUX = 48** mejora simultáneamente dos aspectos del sistema:
+In other words, **AUX = 48** simultaneously improves two aspects of the system:
 
-1. la **geometría** del giro, al suavizar cruces complejos,  
-2. la **semántica vial** de la señalización, al hacer que la direccional cubra una maniobra más realista.
+1. the **geometry** of the turn, by smoothing complex crossings,  
+2. the **road semantics** of the signaling, by making the turn signal cover a more realistic maneuver.
 
 ---
 
-## Justificación topológica y vial de las reglas izquierdas
+## Topological and road-related justification of the left-turn rules
 
-### 7 → 8 y 8 → 9
+### 7 → 8 and 8 → 9
 
-Estas dos transiciones fueron clasificadas como una misma maniobra de direccional izquierda porque representan una incorporación continua en la parte superior del mapa. No se trató de una activación puntual sobre un único vértice, sino de una maniobra prolongada que abarca dos subtramos consecutivos. Desde una perspectiva vial, esta decisión es más correcta que prender y apagar la direccional en un solo punto, ya que el vehículo mantiene un cambio sostenido de orientación hasta alinearse con el siguiente tramo principal del circuito.
+These two transitions were classified as the same left turn signal maneuver because they represent a continuous merge in the upper part of the map. This was not treated as a punctual activation at a single vertex, but rather as an extended maneuver covering two consecutive subsegments. From a road-behavior perspective, this decision is more appropriate than turning the signal on and off at a single point, since the vehicle maintains a sustained change in orientation until it aligns with the next main segment of the circuit.
 
-### 15 → AUX y AUX → 24
+### 15 → AUX and AUX → 24
 
-Este caso representa uno de los cruces izquierdos más importantes de la intersección central. El vehículo entra a la intersección desde una rama, atraviesa el centro y sale hacia otra rama con un giro claro hacia la izquierda. Aquí el nodo auxiliar es esencial, ya que divide la maniobra en dos fases: aproximación al centro y salida desde el centro hacia la rama objetivo. Esto permite que la direccional permanezca encendida durante toda la travesía de la intersección y no solo en el instante puntual del cruce.
+This case represents one of the most important left-turn crossings in the central intersection. The vehicle enters the intersection from one branch, passes through the center, and exits toward another branch with a clear left turn. Here, the auxiliary node is essential because it divides the maneuver into two phases: approach to the center and exit from the center toward the target branch. This allows the turn signal to remain active throughout the entire intersection traversal and not only at the exact instant of the crossing.
 
 ### 17 → 6
 
-Esta transición fue etiquetada como una maniobra de izquierda porque, dentro de la lógica topológica del mapa, representa una incorporación desde una rama interna hacia otra rama principal. Aunque geométricamente la conexión pueda parecer una curva moderada, vialmente implica dejar una trayectoria para incorporarse a otra, lo que justifica la activación de la direccional.
+This transition was labeled as a left maneuver because, within the topological logic of the map, it represents a merge from an inner branch into another main branch. Although geometrically the connection may appear as a moderate curve, from a road perspective it implies leaving one trajectory to merge into another, which justifies turn signal activation.
 
-### 23 → AUX y AUX → 32
+### 23 → AUX and AUX → 32
 
-Este caso es análogo al cruce `15 → AUX → 24`, pero aplicado a otra transición dentro de la intersección central. Nuevamente, el vehículo atraviesa una zona de decisión topológica donde no solo cambia de orientación, sino también de rama de circulación. La división en dos segmentos alrededor del nodo AUX permite mantener la direccional encendida durante toda la maniobra de cruce izquierdo.
+This case is analogous to the crossing `15 → AUX → 24`, but applied to another transition within the central intersection. Once again, the vehicle traverses a topological decision area where it not only changes orientation, but also changes branch within the road network. Splitting the maneuver into two segments around the AUX node allows the turn signal to remain active throughout the entire left-turn crossing.
 
 ### 27 → 7
 
-Esta regla representa una reincorporación desde una trayectoria interna hacia la parte superior o externa del circuito. No se trata simplemente de continuar sobre la misma rama, sino de tomar una conexión distinta dentro del mapa, motivo por el cual se interpretó como una maniobra de izquierda desde el punto de vista vial.
+This rule represents a merge from an inner trajectory toward the upper or outer part of the circuit. It is not simply a continuation along the same branch, but rather taking a different connection within the map, which is why it was interpreted as a left maneuver from the road-behavior standpoint.
 
-### 31 → AUX y AUX → 45
+### 31 → AUX and AUX → 45
 
-Este caso corresponde a otro cruce izquierdo a través del centro de la intersección. Al igual que en los casos anteriores, el uso del nodo auxiliar evita una transición abrupta entre ramas lejanas y distribuye la activación de la direccional sobre una porción más extensa y realista de la trayectoria.
+This case corresponds to another left-turn crossing through the center of the intersection. As in the previous cases, the use of the auxiliary node avoids an abrupt transition between distant branches and distributes turn signal activation over a longer and more realistic portion of the trajectory.
 
-### 44 → AUX y AUX → 16
+### 44 → AUX and AUX → 16
 
-Esta pareja de reglas describe otro cruce izquierdo relevante dentro del mapa. Desde el nodo 44, el vehículo puede entrar al centro de la intersección y salir hacia otra rama, describiendo una maniobra reglamentariamente equivalente a un giro a la izquierda. El uso de AUX permite capturar esa maniobra con mayor fidelidad geométrica.
+This pair of rules describes another relevant left-turn crossing within the map. From node 44, the vehicle can enter the center of the intersection and exit toward another branch, describing a maneuver that is road-wise equivalent to a left turn. The use of AUX allows that maneuver to be captured with greater geometric fidelity.
 
 ---
 
-## Justificación topológica y vial de las reglas derechas
+## Topological and road-related justification of the right-turn rules
 
 ### 9 → 41
 
-Esta transición representa una salida desde la parte superior del circuito hacia una rama interna. Aunque la trayectoria suavizada pueda describir este cambio con continuidad, desde la topología del grafo esta conexión constituye una decisión vial concreta: abandonar la trayectoria en la que se venía y tomar otra rama. Por ello se marcó como maniobra de direccional derecha.
+This transition represents an exit from the upper part of the circuit toward an inner branch. Although the smoothed trajectory may describe this change continuously, from the graph topology this connection constitutes a concrete road decision: leaving the current trajectory and taking another branch. For that reason, it was marked as a right turn signal maneuver.
 
 ### 13 → 46
 
-Esta conexión corresponde a una salida lateral en la zona izquierda del mapa, donde el vehículo deja la rama vertical principal para ingresar a un conector alternativo. Se trata de una maniobra corta, pero claramente significativa desde el punto de vista reglamentario.
+This connection corresponds to a lateral exit in the left side of the map, where the vehicle leaves the main vertical branch to enter an alternate connector. It is a short maneuver, but clearly significant from a regulatory standpoint.
 
 ### 15 → 45
 
-Esta transición es especialmente interesante porque comparte nodo de origen con la maniobra `15 → AUX → 24`, pero representa una salida distinta. Desde el nodo 15, el vehículo puede optar por dos caminos diferentes dentro de la intersección: uno asociado a un cruce izquierdo y otro asociado a una salida hacia la derecha. Esto demuestra que la lógica de direccionales no depende del nodo aislado, sino de la transición específica entre nodos.
+This transition is especially interesting because it shares the same origin node as the maneuver `15 → AUX → 24`, but represents a different exit. From node 15, the vehicle can choose between two different paths within the intersection: one associated with a left crossing and another associated with an exit to the right. This shows that turn signal logic does not depend on the isolated node, but on the specific transition between nodes.
 
 ### 17 → 18
 
-Esta transición representa la entrada del vehículo a una rama descendente situada en la parte derecha del mapa. El cambio de orientación y de rama es lo suficientemente claro como para ser interpretado como una maniobra de derecha.
+This transition represents the vehicle entering a descending branch located on the right side of the map. The change in orientation and branch is clear enough to be interpreted as a right maneuver.
 
 ### 23 → 16
 
-Este caso es la alternativa derecha al cruce izquierdo `23 → AUX → 32`. Desde el nodo 23, el vehículo puede dirigirse hacia distintas ramas, y cada una de esas salidas tiene una semántica vial diferente. La transición hacia 16 fue interpretada como una maniobra de derecha.
+This case is the right-turn alternative to the left-turn crossing `23 → AUX → 32`. From node 23, the vehicle can move toward different branches, and each of those exits has a different road meaning. The transition toward 16 was interpreted as a right maneuver.
 
-### 26 → 27 y 27 → 28
+### 26 → 27 and 27 → 28
 
-Estas dos transiciones consecutivas fueron agrupadas como una misma maniobra prolongada de direccional derecha. La lógica aquí es equivalente a la de los segmentos largos izquierdos: mantener la señal encendida durante todo el desarrollo de la maniobra y no únicamente en uno de sus vértices.
+These two consecutive transitions were grouped as a single extended right turn signal maneuver. The logic here is equivalent to that of the longer left maneuvers: keeping the signal active throughout the full development of the maneuver and not only at one of its vertices.
 
 ### 31 → 25
 
-Esta conexión representa otra salida desde una rama principal hacia una trayectoria distinta. Se clasificó como derecha porque el vehículo abandona su flujo actual para incorporarse a otra dirección de circulación dentro del mapa.
+This connection represents another exit from a main branch toward a different trajectory. It was classified as right because the vehicle leaves its current flow in order to merge into another direction of circulation within the map.
 
-### 39 → 40, 40 → 41 y 41 → 42
+### 39 → 40, 40 → 41, and 41 → 42
 
-Este conjunto de tres segmentos es uno de los mejores ejemplos de maniobra prolongada. En lugar de una activación puntual, se decidió mantener la direccional derecha encendida a través de tres subtramos consecutivos, de modo que todo el cambio de rama quedara correctamente señalizado. Esto demuestra que el sistema es capaz de representar maniobras largas como entidades viales continuas.
+This set of three segments is one of the best examples of an extended maneuver. Instead of a punctual activation, the right turn signal was kept active across three consecutive subsegments, so that the entire branch change would be properly signaled. This demonstrates that the system is capable of representing long maneuvers as continuous road entities.
 
 ### 44 → 32
 
-Este caso es la alternativa derecha al cruce izquierdo `44 → AUX → 16`. Desde el mismo nodo de origen, existen decisiones viales distintas, y por tanto cada transición debe tener su propia lógica de direccional. Esto refuerza la idea de que las reglas están definidas sobre el grafo dirigido y no únicamente sobre la geometría local.
+This case is the right-turn alternative to the left-turn crossing `44 → AUX → 16`. From the same origin node, there are different road decisions, and therefore each transition must have its own turn signal logic. This reinforces the idea that the rules are defined over the directed graph and not only over local geometry.
 
 ### 45 → 3
 
-Finalmente, esta transición representa una conexión desde la zona central inferior hacia otra rama del circuito. Se consideró una maniobra de derecha porque el vehículo abandona la trayectoria en la que se encontraba e ingresa a una nueva rama de circulación.
+Finally, this transition represents a connection from the lower central area toward another branch of the circuit. It was considered a right maneuver because the vehicle leaves the trajectory it was on and enters a new circulation branch.
 
 ---
 
-## Script para generar los segmentos de direccionales
+## Script to generate the turn signal segments
 
-Una vez definidas las reglas sobre pares de nodos, fue necesario construir un procedimiento que las tradujera a segmentos reales sobre la trayectoria suavizada. El script empleado para ello fue el siguiente:
+Once the rules over node pairs had been defined, it was necessary to build a procedure that translated them into actual segments over the smoothed trajectory. The script used for that purpose was the following:
 
 ```matlab
 %% =============================
-% MAPEO NODOS → INDICES EN TRAYECTORIA
+% NODE → TRAJECTORY INDEX MAPPING
 % =============================
 
 num_nodes_path = length(pathNodes_corrected);
 node_to_idx = zeros(num_nodes_path,1);
 
-search_start = 1; %  clave: evita ambigüedades
+search_start = 1; % key: avoids ambiguities
 AUX = 48;
 
 for k = 1:num_nodes_path
@@ -198,7 +198,7 @@ for k = 1:num_nodes_path
         
         dx = path_x_smooth(i) - nodo_xy(1);
         dy = path_y_smooth(i) - nodo_xy(2);
-        d = dx^2 + dy^2; % sin sqrt (más rápido)
+        d = dx^2 + dy^2; % no sqrt (faster)
         
         if d < min_dist
             min_dist = d;
@@ -207,11 +207,11 @@ for k = 1:num_nodes_path
     end
     
     node_to_idx(k) = best_idx;
-    search_start = best_idx; % solo busca hacia adelante
+    search_start = best_idx; % search only forward
 end
 
 %% =============================
-% DEFINIR TUS REGLAS
+% DEFINE YOUR RULES
 % =============================
 
 der = [9 41; 13 46; 15 45; 17 18; 23 16; 26 27; 27 28;
@@ -220,7 +220,7 @@ der = [9 41; 13 46; 15 45; 17 18; 23 16; 26 27; 27 28;
 izq = [7 8; 8 9; 15 AUX; AUX 24; 17 6; 23 AUX; AUX 32; 27 7; 31 AUX; AUX 45; 44 AUX; AUX 16];
 
 %% =============================
-% CREAR SEGMENTOS
+% CREATE SEGMENTS
 % =============================
 
 segmentos_izq = [];
@@ -236,7 +236,7 @@ for k = 1:length(pathNodes_corrected)-1
     
     segmento = [min(idx1,idx2), max(idx1,idx2)];
     
-    % Verificar si este tramo está en tus reglas
+    % Check whether this segment is in your rules
     
     if any(all(izq == [n1 n2],2))
         segmentos_izq = [segmentos_izq; segmento];
@@ -249,7 +249,7 @@ for k = 1:length(pathNodes_corrected)-1
 end
 
 %% =============================
-% (OPCIONAL) UNIR SEGMENTOS CONTIGUOS
+% (OPTIONAL) MERGE CONTIGUOUS SEGMENTS
 % =============================
 
 merge_segments = @(seg) ...
@@ -258,110 +258,111 @@ merge_segments = @(seg) ...
     1:size(seg,1)-1, 'UniformOutput', false)');
 
 %% =============================
-% GUARDAR
+% SAVE
 % =============================
 
 save('segmentos_direccionales.mat', 'segmentos_izq', 'segmentos_der');
 
 %% =============================
-%  VISUALIZACIÓN 
+% VISUALIZATION
 % =============================
 
 figure; hold on; grid on; axis equal;
 
 h_traj = plot(path_x_smooth, path_y_smooth, 'k');
 
-% IZQUIERDA (verde)
+% LEFT (green)
 h_izq = [];
 for i = 1:size(segmentos_izq,1)
     idx = segmentos_izq(i,1):segmentos_izq(i,2);
     h_izq = plot(path_x_smooth(idx), path_y_smooth(idx), 'g', 'LineWidth', 3);
 end
 
-% DERECHA (rojo)
+% RIGHT (red)
 h_der = [];
 for i = 1:size(segmentos_der,1)
     idx = segmentos_der(i,1):segmentos_der(i,2);
     h_der = plot(path_x_smooth(idx), path_y_smooth(idx), 'r', 'LineWidth', 3);
 end
 
-legend([h_traj, h_izq, h_der], {'Path', ' left turn signal', 'right turn signal'});
+legend([h_traj, h_izq, h_der], {'Path', 'left turn signal', 'right turn signal'});
 ````
+
 ---
-## Explicación detallada del script
 
-### 1. Mapeo de nodos a índices de la trayectoria suavizada
+## Detailed explanation of the script
 
-La trayectoria que sigue realmente el vehículo no está compuesta por nodos, sino por miles de puntos interpolados almacenados en `path_x_smooth` y `path_y_smooth`. Por ello, la primera parte del script busca asociar cada nodo de la ruta corregida con un índice real sobre la trayectoria continua.
+### 1. Mapping nodes to indices of the smoothed trajectory
 
-Si se denota la trayectoria continua por:
+The trajectory that the vehicle actually follows is not composed of nodes, but of thousands of interpolated points stored in `path_x_smooth` and `path_y_smooth`. For that reason, the first part of the script seeks to associate each node of the corrected route with a real index on the continuous trajectory.
+
+If the continuous trajectory is denoted by:
 
 $$
 \mathcal{P} = {(x_1,y_1), (x_2,y_2), \dots, (x_M,y_M)}
 $$
 
-y cada nodo corregido por:
+and each corrected node by:
 
 $$
 v_k = (x_k^{node}, y_k^{node}),
 $$
 
-entonces el índice asociado a cada nodo se calcula como:
+then the index associated with each node is computed as:
 
 $$
 i_k^\star = \arg\min_{i \ge i_{k-1}^\star}
 \left[(x_i - x_k^{node})^2 + (y_i - y_k^{node})^2\right]
 $$
 
-El uso de la distancia cuadrática evita la raíz cuadrada y hace el cálculo más eficiente. Además, la variable `search_start` obliga a que la búsqueda siempre avance hacia adelante, lo que evita ambigüedades en trayectorias donde el camino se aproxima a zonas previamente recorridas.
+Using squared distance avoids the square root and makes the computation more efficient. In addition, the variable `search_start` forces the search always to move forward, which avoids ambiguities in trajectories where the path comes close to previously traversed areas.
 
-### 2. Aplicación de reglas sobre transiciones entre nodos
+### 2. Applying rules over transitions between nodes
 
-Una vez obtenido el arreglo `node_to_idx`, el script recorre la secuencia `pathNodes_corrected` tomando pares consecutivos ((n_1,n_2)). Para cada transición, verifica si ese par pertenece a la lista `izq` o a la lista `der`.
+Once the `node_to_idx` array has been obtained, the script traverses the sequence `pathNodes_corrected` by taking consecutive pairs ((n_1,n_2)). For each transition, it checks whether that pair belongs to the `izq` list or to the `der` list.
 
-Si el par pertenece a `izq`, se crea un segmento izquierdo.
-Si pertenece a `der`, se crea un segmento derecho.
+If the pair belongs to `izq`, a left segment is created.
+If it belongs to `der`, a right segment is created.
 
-De esta manera, el algoritmo transforma una regla topológica discreta en un intervalo real sobre la trayectoria continua.
+In this way, the algorithm transforms a discrete topological rule into an actual interval over the continuous trajectory.
 
-### 3. Construcción de segmentos
+### 3. Segment construction
 
-Cada tramo queda representado como un intervalo de índices:
+Each section is represented as an interval of indices:
 
 $$
 I_k = [\min(i_k^\star, i_{k+1}^\star),\ \max(i_k^\star, i_{k+1}^\star)]
 $$
 
-Esto significa que la direccional no se activa en un único punto, sino en toda una región continua de la trayectoria. Esta decisión es correcta desde el punto de vista vehicular, porque una direccional debe permanecer encendida durante el desarrollo completo de la maniobra y no solamente al cruzar un vértice del grafo.
+This means that the turn signal is not activated at a single point, but over an entire continuous region of the trajectory. This decision is correct from the vehicle behavior standpoint, because a turn signal must remain active throughout the full development of the maneuver and not only when crossing one graph vertex.
 
-### 4. Unión opcional de segmentos contiguos
+### 4. Optional merging of contiguous segments
 
-El script propone una función opcional `merge_segments` para unir segmentos que sean contiguos. Aunque esta función no es estrictamente necesaria para la visualización básica, puede resultar útil si se desea simplificar la representación y agrupar maniobras largas en una sola región continua.
+The script proposes an optional `merge_segments` function to merge contiguous segments. Although this function is not strictly necessary for basic visualization, it may be useful if one wants to simplify the representation and group long maneuvers into a single continuous region.
 
-### 5. Guardado y visualización
+### 5. Saving and visualization
 
-Los segmentos resultantes se guardan en el archivo `segmentos_direccionales.mat`, lo cual permite reutilizarlos posteriormente en otros módulos del sistema, por ejemplo en el bloque de control de luces. Finalmente, el script genera una figura donde:
+The resulting segments are saved into the `segmentos_direccionales.mat` file, which makes it possible to reuse them later in other system modules, for example in the light controller block. Finally, the script generates a figure where:
 
-* la trayectoria total aparece en negro,
-* los segmentos con direccional izquierda aparecen en verde,
-* los segmentos con direccional derecha aparecen en rojo.
+* the full trajectory appears in black,
+* the left-turn-signal segments appear in green,
+* the right-turn-signal segments appear in red.
 
 ---
 
-## Figura de seccionamiento de direccionales para el ejemplo nodo 1 al nodo 30
+## Figure of turn signal segmentation for the node 1 to node 30 example
 
-![Seccionamiento de la trayectoria del nodo 1 al nodo 30](/assets/img/DireccionalesNodo1a30.jpeg)
+![Trajectory segmentation from node 1 to node 30](/assets/img/DireccionalesNodo1a30.jpeg)
 
-**Figura.** Seccionamiento de la trayectoria correspondiente al ejemplo de planeación entre el **nodo 1** y el **nodo 30**. La ruta completa se muestra en negro, los segmentos donde debe encenderse la direccional izquierda aparecen en verde y los segmentos donde debe encenderse la direccional derecha aparecen en rojo.
+**Figure.** Segmentation of the trajectory corresponding to the planning example between **node 1** and **node 30**. The complete route is shown in black, the segments where the left turn signal must be activated appear in green, and the segments where the right turn signal must be activated appear in red.
 
-## Interpretación  del resultado
+## Interpretation of the result
 
-La figura de seccionamiento demuestra que la activación de direccionales no fue definida de manera arbitraria ni únicamente a partir de la curvatura visual de la trayectoria. Cada segmento coloreado corresponde a una transición del grafo cuya interpretación vial fue previamente codificada. Esto hace posible que el vehículo combine dos niveles distintos de inteligencia dentro del sistema:
+The segmentation figure demonstrates that turn signal activation was not defined arbitrarily or solely from the visual curvature of the trajectory. Each colored segment corresponds to a graph transition whose road-related interpretation had been previously encoded. This makes it possible for the vehicle to combine two different levels of intelligence within the system:
 
-1. **seguimiento geométrico**, basado en la trayectoria suavizada,
-2. **comportamiento vial semántico**, basado en reglas topológicas sobre nodos.
+1. **geometric tracking**, based on the smoothed trajectory,
+2. **semantic road behavior**, based on topological rules over nodes.
 
-Los segmentos verdes representan maniobras donde el vehículo debe anunciar un giro o incorporación a la izquierda, mientras que los segmentos rojos corresponden a maniobras equivalentes hacia la derecha. El hecho de que estas regiones queden localizadas exactamente sobre partes específicas de la trayectoria confirma que el mapeo entre nodos y curva interpolada fue correcto.
+The green segments represent maneuvers in which the vehicle must announce a left turn or merge, while the red segments correspond to equivalent maneuvers to the right. The fact that these regions are located exactly over specific parts of the trajectory confirms that the mapping between nodes and the interpolated curve was correct.
 
-Además, el uso del nodo auxiliar **AUX = 48** resulta particularmente valioso en intersecciones complejas, ya que permite modelar giros izquierdos como una secuencia continua y no como una transición brusca entre nodos extremos. En consecuencia, la direccional permanece encendida durante una porción de trayectoria más representativa de la maniobra real.
-
+In addition, the use of the auxiliary node **AUX = 48** is particularly valuable in complex intersections, since it makes it possible to model left turns as a continuous sequence rather than as an abrupt transition between extreme nodes. Consequently, the turn signal remains active over a portion of trajectory that is more representative of the actual maneuver.

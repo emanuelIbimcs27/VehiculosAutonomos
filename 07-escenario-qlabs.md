@@ -1,32 +1,32 @@
 ---
 layout: default
-title: Generación del Escenario en QLabs
+title: QLabs Scenario Generation
 nav_order: 5
 parent: CPS IoT Competition 2026
 permalink: /CPS/escenario-qlabs/
 ---
-# Generación del Escenario en QLabs
+# QLabs Scenario Generation
 
-## 7. Generación programática del escenario de competencia en QLabs
+## 7. Programmatic generation of the competition scenario in QLabs
 
-Además del diseño del algoritmo de conducción autónoma, una parte esencial del proyecto fue la construcción del entorno de simulación donde dicho algoritmo sería validado. Para ello se desarrolló un script encargado de generar programáticamente el escenario de competencia dentro de **QLabs**, incorporando no solo la infraestructura geométrica del mapa, sino también elementos dinámicos y estáticos relevantes para el comportamiento del vehículo: muros, señalización, cruces peatonales, semáforos, una persona estática para simulación de pickup, un peatón dinámico cruzando la calle y un cono de tráfico como obstáculo de la competencia.
+In addition to the design of the autonomous driving algorithm, an essential part of the project was the construction of the simulation environment in which the algorithm would be validated. For this purpose, a script was developed to programmatically generate the competition scenario within **QLabs**, incorporating not only the geometric infrastructure of the map, but also dynamic and static elements relevant to the vehicle’s behavior: walls, traffic signs, crosswalks, traffic lights, a static person for pickup simulation, a dynamic pedestrian crossing the street, and a traffic cone as a competition obstacle.
 
-Desde una perspectiva de ingeniería, este script no cumple únicamente una función estética o visual. Su verdadero propósito es crear un entorno de pruebas controlado, reproducible y suficientemente rico como para evaluar el desempeño del vehículo en condiciones cercanas a las de una escena urbana simplificada. De esta manera, el escenario deja de ser un fondo pasivo y se convierte en una parte activa de la validación del sistema.
+From an engineering perspective, this script does not serve only an aesthetic or visual purpose. Its true objective is to create a controlled, reproducible, and sufficiently rich testing environment to evaluate vehicle performance under conditions close to those of a simplified urban scene. In this way, the scenario stops being a passive background and becomes an active part of system validation.
 
-### 7.1 Objetivo del generador de escenario
+### 7.1 Objective of the scenario generator
 
-El objetivo general de esta rutina es construir una instancia del entorno en la que el vehículo pueda ser probado frente a distintas situaciones de navegación. Estas situaciones incluyen:
+The general objective of this routine is to build an instance of the environment in which the vehicle can be tested under different navigation situations. These situations include:
 
-- circulación sobre el mapa de competencia,
-- interacción con señales de tránsito,
-- respuesta ante semáforos con estados cambiantes,
-- detección y evasión de un cono,
-- simulación de recolección de un pasajero en banqueta,
-- detección y respuesta ante un peatón que cruza un paso de cebra.
+- driving over the competition map,
+- interaction with traffic signs,
+- response to traffic lights with changing states,
+- detection and avoidance of a cone,
+- simulation of picking up a passenger waiting on the sidewalk,
+- detection of and response to a pedestrian crossing a crosswalk.
 
-En términos funcionales, este módulo proporciona el contexto físico y lógico dentro del cual opera el algoritmo de self-driving. Por ello, su papel dentro del sistema completo es fundamental.
+In functional terms, this module provides the physical and logical context within which the self-driving algorithm operates. For this reason, its role within the complete system is fundamental.
 
-### 7.2 Selección del punto de spawn del vehículo
+### 7.2 Selection of the vehicle spawn point
 
 ```matlab
 %% Configurable Params
@@ -35,16 +35,16 @@ En términos funcionales, este módulo proporciona el contexto físico y lógico
 % 1 => calibration location
 % 2 => taxi hub area
 spawn_location = 2;
-```
+````
 
-Este parámetro permite seleccionar la posición inicial del QCar. Existen dos configuraciones posibles:
+This parameter makes it possible to select the initial position of the QCar. There are two possible configurations:
 
-- `spawn_location = 1`: ubicación de calibración
-- `spawn_location = 2`: zona del taxi hub
+* `spawn_location = 1`: calibration location
+* `spawn_location = 2`: taxi hub area
 
-Esto es útil porque el mismo escenario puede usarse para distintos propósitos. Una posición de calibración sirve para validaciones iniciales de sensores, referencia espacial o arranque del sistema, mientras que la posición del taxi hub permite ejecutar la lógica completa de navegación y pickup desde un punto operativo más representativo del flujo del proyecto.
+This is useful because the same scenario can be used for different purposes. A calibration position is useful for initial validations of sensors, spatial reference, or system startup, while the taxi hub position allows execution of the complete navigation and pickup logic from an operating point that is more representative of the project workflow.
 
-### 7.3 Función de limpieza y manejo de recursos
+### 7.3 Cleanup and resource management function
 
 ```matlab
 function cleanupQLabs(qlabs)
@@ -52,17 +52,17 @@ function cleanupQLabs(qlabs)
 end
 ```
 
-La función de limpieza se encarga de cerrar correctamente la conexión con QLabs. Este tipo de rutina es importante porque evita que queden sesiones abiertas o actores residuales en memoria después de una ejecución fallida o de una terminación abrupta. Desde el punto de vista de robustez experimental, cerrar correctamente la sesión garantiza que el siguiente experimento comience desde un estado limpio.
+The cleanup function is responsible for correctly closing the connection with QLabs. This type of routine is important because it prevents open sessions or residual actors from remaining in memory after a failed execution or an abrupt termination. From the perspective of experimental robustness, properly closing the session guarantees that the next experiment begins from a clean state.
 
-### 7.4 Controlador dinámico de tráfico y peatón
+### 7.4 Dynamic traffic and pedestrian controller
 
-Una de las piezas más relevantes del script es la función `trafficLightController`, encargada de manejar simultáneamente el estado de los semáforos y el movimiento del peatón dinámico.
+One of the most relevant parts of the script is the `trafficLightController` function, which is responsible for simultaneously handling the traffic light states and the motion of the dynamic pedestrian.
 
 ```matlab
 function trafficLightController(qlabs)
-    disp('Iniciando controlador de tráfico y peatón...')
+    disp('Starting traffic and pedestrian controller...')
     try
-        % Inicialización de semáforos
+        % Traffic light initialization
         t1 = QLabsTrafficLight(qlabs);
         t2 = QLabsTrafficLight(qlabs);
         t3 = QLabsTrafficLight(qlabs);
@@ -74,26 +74,24 @@ function trafficLightController(qlabs)
         t3.spawn_id_degrees(3, [-0.37, 0.3, 0.006], [0,0,180], [0.1, 0.1, 0.1], 0, false);
         t4.spawn_id_degrees(4, [0.75, 0.48, 0.006], [0,0,-90], [0.1, 0.1, 0.1], 0, false);
                 
-        % Referencia al peatón (ID 20)
+        % Reference to pedestrian (ID 20)
         hObstacle = QLabsPerson(qlabs);
         hObstacle.actorNumber = 20; 
         
-        % Coordenadas (Usando las que definiste abajo)
+        % Coordinates
         LOC_A = [1.441, 0.569, 0.005]; 
         LOC_B = [1.441, 0.809, 0.005]; 
         hacia_B = true; 
         
         intersection1Flag = 0;
         
-        % Solo un onCleanup y que sea simple
         clear cleanup;
-        %cleanup = onCleanup(@() disp('Finalizando controlador.'));
         cleanup = onCleanup(@() qlabs.close());
 
         while(true)
-            fprintf('Ciclo de semáforo: %d\n', intersection1Flag);
+            fprintf('Traffic light cycle: %d\n', intersection1Flag);
             
-            % Lógica de colores simplificada para evitar errores de referencia
+            % Simplified color logic to avoid reference errors
             if intersection1Flag == 0
                 t1.set_color(3); t3.set_color(3); t2.set_color(1); t4.set_color(1);
             elseif intersection1Flag == 1
@@ -104,13 +102,11 @@ function trafficLightController(qlabs)
                 t1.set_color(2); t3.set_color(2);
             end
 
-            % Movimiento del peatón
+            % Pedestrian motion
             if hacia_B
-                %hObstacle.move_to(LOC_B, hObstacle.WALK, 1);
                 hObstacle.move_to(LOC_B, 0.3, 1);
                 hacia_B = false;
             else
-                %hObstacle.move_to(LOC_A, hObstacle.WALK, 1);
                 hObstacle.move_to(LOC_A, 0.3, 1);
                 hacia_B = true;
             end
@@ -119,58 +115,58 @@ function trafficLightController(qlabs)
             pause(5);
         end
     catch ME
-        fprintf('Error en el controlador: %s\n', ME.message);
-        % No cerramos qlabs aquí para poder ver el error en consola
+        fprintf('Controller error: %s\n', ME.message);
+        % qlabs is not closed here in order to inspect the error in console
     end
 end
 ```
 
-### 7.5 Lógica temporal del sistema semafórico
+### 7.5 Temporal logic of the traffic light system
 
-La variable `intersection1Flag` funciona como un índice de estado discreto que evoluciona cíclicamente según:
+The variable `intersection1Flag` functions as a discrete state index that evolves cyclically according to:
 
 $$
 intersection1Flag_{k+1} = (intersection1Flag_k + 1) \bmod 4
 $$
 
-Esto genera un ciclo periódico con cuatro fases:
+This generates a periodic cycle with four phases:
 
 $$
 0 \rightarrow 1 \rightarrow 2 \rightarrow 3 \rightarrow 0 \rightarrow \dots
 $$
 
-Cada fase representa una combinación distinta del estado de los semáforos. Aunque el script no modela explícitamente todas las complejidades de un sistema de tráfico urbano real, sí genera una alternancia suficiente para obligar al vehículo a detectar colores, decidir si debe esperar y determinar el momento apropiado para comprometerse a cruzar la intersección.
+Each phase represents a different combination of traffic light states. Although the script does not explicitly model all the complexities of a real urban traffic system, it does generate enough alternation to force the vehicle to detect colors, decide whether it should wait, and determine the appropriate moment to commit to crossing the intersection.
 
-Esta estructura es muy útil porque introduce un entorno dinámico pero controlado. Al cambiar cada cinco segundos:
+This structure is very useful because it introduces a dynamic yet controlled environment. By changing every five seconds:
 
 $$
-T_{ciclo} = 5\ \text{s}
+T_{cycle} = 5\ \text{s}
 $$
 
-se obtiene una señal temporal suficientemente lenta para ser capturada y procesada por la percepción del vehículo, pero suficientemente dinámica como para poner a prueba su lógica de decisión.
+a temporal signal is obtained that is slow enough to be captured and processed by the vehicle’s perception system, but dynamic enough to test its decision-making logic.
 
-### 7.6 Movimiento cíclico del peatón dinámico
+### 7.6 Cyclic motion of the dynamic pedestrian
 
-El peatón asociado al actor 20 se mueve entre dos puntos:
+The pedestrian associated with actor 20 moves between two points:
 
 ```matlab
 LOC_A = [1.441, 0.569, 0.005]; 
 LOC_B = [1.441, 0.809, 0.005];
 ```
 
-La trayectoria del peatón puede describirse como una oscilación periódica entre dos extremos:
+The pedestrian trajectory can be described as a periodic oscillation between two extremes:
 
 $$
 A \rightarrow B \rightarrow A \rightarrow B \rightarrow \dots
 $$
 
-La variable booleana `hacia_B` controla el sentido del movimiento. Este diseño permite simular un peatón que cruza repetidamente un paso de cebra, lo cual es ideal para probar el módulo de detección peatonal y la lógica de frenado del vehículo.
+The Boolean variable `hacia_B` controls the direction of motion. This design makes it possible to simulate a pedestrian repeatedly crossing a crosswalk, which is ideal for testing the pedestrian detection module and the vehicle braking logic.
 
-Desde el punto de vista de validación, esta elección es muy conveniente porque el evento peatonal no depende del azar: siempre ocurre en la misma zona del mapa, de forma repetible, y con una velocidad controlada.
+From a validation standpoint, this choice is very convenient because the pedestrian event does not depend on randomness: it always occurs in the same area of the map, in a repeatable way, and at a controlled speed.
 
-### 7.7 Configuración del entorno de MATLAB y QLabs
+### 7.7 MATLAB and QLabs environment configuration
 
-Antes de construir el escenario, el script verifica que la librería de QLabs esté en el path de MATLAB y detiene posibles modelos RT previamente activos:
+Before constructing the scenario, the script verifies that the QLabs library is included in the MATLAB path and stops any previously active RT models:
 
 ```matlab
 newPathEntry = fullfile(getenv('QAL_DIR'), '0_libraries', 'matlab', 'qvl');
@@ -180,22 +176,22 @@ qc_stop_model('tcpip://localhost:17000', 'QCar2_Workspace')
 qc_stop_model('tcpip://localhost:17000', 'QCar2_Workspace_studio')
 ```
 
-Posteriormente establece la conexión con QLabs:
+It then establishes the connection to QLabs:
 
 ```matlab
 qlabs = QuanserInteractiveLabs();
 connection_established = qlabs.open('localhost');
 ```
 
-y limpia el mundo virtual eliminando actores preexistentes:
+and clears the virtual world by removing previously spawned actors:
 
 ```matlab
 num_destroyed = qlabs.destroy_all_spawned_actors();
 ```
 
-Estas operaciones son importantes porque garantizan que cada ejecución del experimento comience desde un entorno limpio y consistente. Esto evita resultados contaminados por objetos residuales o configuraciones previas del simulador.
+These operations are important because they guarantee that each experiment execution begins from a clean and consistent environment. This avoids results contaminated by residual objects or prior simulator configurations.
 
-### 7.8 Construcción del piso y referencia geométrica del escenario
+### 7.8 Floor construction and geometric reference of the scenario
 
 ```matlab
 x_offset = 0.13;
@@ -204,11 +200,11 @@ hFloor = QLabsQCarFlooring(qlabs);
 hFloor.spawn_degrees([x_offset, y_offset, 0.001],[0, 0, -90]);
 ```
 
-Aquí se define el piso del escenario con una traslación $(x_{offset}, y_{offset})$ y una rotación de \(-90^\circ\). Esta etapa es importante porque establece el marco físico sobre el cual se montan el resto de los elementos del escenario. La correcta ubicación del piso permite que la distribución de muros, señales y actores corresponda con las coordenadas utilizadas por la trayectoria del vehículo y por el mapa topológico de nodos.
+Here, the floor of the scenario is defined with a translation $(x_{offset}, y_{offset})$ and a rotation of (-90^\circ). This stage is important because it establishes the physical reference frame on which all other scenario elements are mounted. Correct floor placement ensures that the distribution of walls, signs, and actors matches the coordinates used by the vehicle trajectory and the topological map of nodes.
 
-### 7.9 Construcción de muros y límites físicos
+### 7.9 Construction of walls and physical boundaries
 
-El script genera múltiples muros para delimitar el circuito:
+The script generates multiple walls to delimit the circuit:
 
 ```matlab
 hWall = QLabsWalls(qlabs);
@@ -224,19 +220,19 @@ end
 ...
 ```
 
-Estos muros cumplen una doble función. Por un lado, reproducen la geometría del circuito de competencia. Por otro, actúan como elementos físicos de referencia visual y espacial dentro de QLabs. Desactivar la dinámica de los muros implica que estos se comportan como elementos estáticos del entorno, lo cual es apropiado porque su propósito es delimitar la infraestructura y no interactuar dinámicamente con el vehículo.
+These walls serve a dual function. On one hand, they reproduce the geometry of the competition circuit. On the other hand, they act as physical visual and spatial reference elements within QLabs. Disabling wall dynamics implies that they behave as static elements of the environment, which is appropriate because their purpose is to delimit the infrastructure and not to interact dynamically with the vehicle.
 
-### 7.10 Señalización vertical y horizontal
+### 7.10 Vertical and horizontal traffic signaling
 
-El escenario incorpora varios tipos de señalización. Entre ellos:
+The scenario incorporates several types of road signaling. These include:
 
-- señales de STOP,
-- señales de glorieta,
-- señales de YIELD,
-- cruces peatonales,
-- líneas guía blancas.
+* STOP signs,
+* roundabout signs,
+* YIELD signs,
+* crosswalks,
+* white guide lines.
 
-Por ejemplo, las señales de STOP se generan mediante:
+For example, STOP signs are generated by:
 
 ```matlab
 myStopSign = QLabsStopSign(qlabs);
@@ -263,7 +259,7 @@ myStopSign.spawn_degrees([1.766, 1.697, 0.006], ...
                         false);
 ```
 
-y los cruces peatonales mediante:
+and crosswalks by:
 
 ```matlab
 myCrossWalk = QLabsCrosswalk(qlabs);
@@ -298,71 +294,71 @@ myCrossWalk.spawn_degrees   ([1.45, 0.95, 0.006], ...
                             0);
 ```
 
-La presencia explícita de estos elementos es clave, ya que el modelo de percepción y la lógica de tránsito del vehículo dependen directamente de ellos. En otras palabras, el escenario fue diseñado para contener exactamente los objetos que el pipeline de self-driving necesita detectar e interpretar.
+The explicit presence of these elements is key, since the perception model and the vehicle traffic logic depend directly on them. In other words, the scenario was designed to contain exactly the objects that the self-driving pipeline needs to detect and interpret.
 
-### 7.11 Persona estática para simulación de pickup
+### 7.11 Static person for pickup simulation
 
 ```matlab
 hPersonStatic = QLabsPerson(qlabs);
 
-% Definimos los parámetros según tus coordenadas
-loc_persona = [-0.424, 4.55, 0.005]; % Agregamos un pequeño offset en Z para que no atraviese el suelo
-rot_persona = [0, 0, -90];            % 90 grados para que esté viendo hacia la calle (ajusta si es necesario)
-scale_persona = [0.1, 0.1, 0.1];           % Tamaño normal
-id_persona = 10;                     % Un número de ID único para este actor
-config_persona = 11;                  % Puedes elegir de 0 a 11 para cambiar su apariencia
+% Parameters according to the selected coordinates
+loc_persona = [-0.424, 4.55, 0.005];
+rot_persona = [0, 0, -90];
+scale_persona = [0.1, 0.1, 0.1];
+id_persona = 10;
+config_persona = 11;
 
-% Spawneamos a la persona
+% Spawn the person
 hStatus = hPersonStatic.spawn_id_degrees(id_persona, loc_persona, rot_persona, scale_persona, config_persona, true);
 
 if hStatus == 0
-    disp('Persona spawneada con éxito en la banqueta.');
+    disp('Person successfully spawned on the sidewalk.');
 else
-    disp('Error al spawnear la persona. Revisa la conexión con QLabs.');
+    disp('Error spawning the person. Check the QLabs connection.');
 end
 ```
 
-Esta persona estática representa al pasajero que el vehículo debe simular recoger. Su ubicación sobre la banqueta es intencional, ya que obliga al sistema a distinguir entre una persona esperando en un punto de recogida y un peatón cruzando activamente la calle.
+This static person represents the passenger that the vehicle must simulate picking up. Its location on the sidewalk is intentional, since it forces the system to distinguish between a person waiting at a pickup point and a pedestrian actively crossing the street.
 
-Desde el punto de vista del proyecto, este actor introduce una lógica de alto nivel relacionada con el caso de uso taxi autónomo.
+From the project standpoint, this actor introduces a higher-level logic associated with the autonomous taxi use case.
 
-### 7.12 Persona dinámica cruzando la calle
+### 7.12 Dynamic person crossing the street
 
 ```matlab
 hPersonObstacle = QLabsPerson(qlabs);
-% Punto A (Banqueta derecha), Punto B (Banqueta izquierda)
+% Point A (right sidewalk), Point B (left sidewalk)
 LOC_A_OBSTACULO = [1.441, 0.62, 0.005]; 
 LOC_B_OBSTACULO = [1.441, 0.81, 0.005]; 
 
-% Spawn inicial del obstáculo (ID 20 para no chocar con la otra)
+% Initial spawn of the obstacle (ID 20 to avoid collision with the other one)
 hPersonObstacle.spawn_id_degrees(20, LOC_A_OBSTACULO, [0, 0, -180], [0.1, 0.1, 0.1], 11, true);
-disp('Persona DINÁMICA lista para cruzar (ID 20).');
+disp('Dynamic person ready to cross (ID 20).');
 ```
 
-Este peatón es el actor que cruza repetidamente un paso peatonal. Su función es alimentar la lógica de frenado y validación peatonal del vehículo. El hecho de que se le asigne un identificador propio (`ID 20`) permite que el controlador dinámico lo localice y actualice su posición de forma consistente.
+This pedestrian is the actor that repeatedly crosses a crosswalk. Its function is to feed the braking logic and pedestrian validation logic of the vehicle. Assigning it its own identifier (`ID 20`) makes it possible for the dynamic controller to locate it and update its position consistently.
 
-### 7.13 Obstáculo tipo cono
+### 7.13 Cone obstacle
 
 ```matlab
 hTrafficCone = QLabsTrafficCone(qlabs);
 
-% Configuración según tus coordenadas
-loc_cone = [2.221, 1.017, 0.25]; % Z en 0.25 como recomienda el ejemplo
+% Configuration according to the selected coordinates
+loc_cone = [2.221, 1.017, 0.25];
 rot_cone = [0, 0, 0];
-scale_cone = [0.2, 0.2, 0.2]; % Mantengo tu escala pequeña
+scale_cone = [0.2, 0.2, 0.2];
 id_cone = 101;
 
-% 1. SPAWN (Usando spawn_id_degrees para asegurar el ID)
+% 1. SPAWN
 hStatusCone = hTrafficCone.spawn_id_degrees(id_cone, loc_cone, rot_cone, scale_cone, 0, true);
 ```
 
-El cono representa un obstáculo físico de la competencia y es precisamente el objeto que activa la función de evasión `avoidCone`. Su colocación en el mapa permite introducir un evento local de obstrucción que obliga al vehículo a apartarse temporalmente de la trayectoria nominal.
+The cone represents a physical competition obstacle and is precisely the object that triggers the `avoidCone` avoidance function. Its placement on the map introduces a local obstruction event that forces the vehicle to temporarily deviate from the nominal trajectory.
 
-Desde el punto de vista experimental, este actor es muy valioso porque permite validar una reacción local de navegación sin tener que rediseñar la ruta global.
+From the experimental standpoint, this actor is very valuable because it makes it possible to validate a local navigation reaction without having to redesign the global route.
 
-### 7.14 Cámaras del entorno
+### 7.14 Cameras in the environment
 
-El script también genera cámaras libres para observación y depuración:
+The script also generates free cameras for observation and debugging:
 
 ```matlab
 camera1Loc = [0.15, 1.7, 5];
@@ -373,7 +369,7 @@ camera1.spawn_degrees(camera1Loc, camera1Rot);
 camera1.possess();
 ```
 
-y otra cámara lateral:
+and another side camera:
 
 ```matlab
 camera2Loc = [-0.36+ x_offset, -3.691+ y_offset, 2.652];
@@ -382,18 +378,18 @@ camera2=QLabsFreeCamera(qlabs);
 camera2.spawn_degrees (camera2Loc, camera2Rot);
 ```
 
-Estas cámaras no forman parte de la lógica autónoma del vehículo, pero sí son muy importantes para documentar resultados, inspeccionar la escena y verificar visualmente el comportamiento del sistema durante la simulación.
+These cameras are not part of the autonomous logic of the vehicle, but they are very important for documenting results, inspecting the scene, and visually verifying system behavior during simulation.
 
-### 7.15 Spawn final del QCar y arranque del modelo RT
+### 7.15 Final QCar spawn and RT model startup
 
-El vehículo puede spawnearse en dos posiciones definidas:
+The vehicle can be spawned in two predefined positions:
 
 ```matlab
 calibration_location_rotation = [0, 2.13, 0.005, 0, 0, -90];
 taxi_hub_location_rotation = [-1.205, -0.83, 0.005, 0, 0, -44.7];
 ```
 
-y después se selecciona una de ellas según `spawn_location`:
+and one of them is then selected according to `spawn_location`:
 
 ```matlab
 myCar = QLabsQCar2(qlabs);
@@ -408,7 +404,7 @@ end
 myCar.spawn_id_degrees(0, spawn(1:3), spawn(4:6), [1/10, 1/10, 1/10], 1);
 ```
 
-Posteriormente se inicia el modelo RT asociado al QCar:
+Subsequently, the RT model associated with the QCar is started:
 
 ```matlab
 file_workspace = fullfile(getenv('RTMODELS_DIR'), 'QCar2', 'QCar2_Workspace_studio.rt-win64');
@@ -417,16 +413,16 @@ system(['quarc_run -D -r -t tcpip://localhost:17000 ', file_workspace]);
 pause(3)
 ```
 
-y finalmente se activa el controlador de tráfico:
+and finally the traffic controller is activated:
 
 ```matlab
 trafficLightController(qlabs)
 ```
 
-Con ello, el escenario completo queda operativo: el mapa existe, las señales están colocadas, el peatón dinámico cruza la calle, la persona estática espera en la banqueta, el cono está presente en el circuito y el QCar queda listo para ejecutar el algoritmo de self-driving.
+At that point, the complete scenario becomes operational: the map exists, the signs are placed, the dynamic pedestrian crosses the street, the static person waits on the sidewalk, the cone is present in the circuit, and the QCar is ready to execute the self-driving algorithm.
 
-## Papel de esta sección dentro del sistema completo
+## Role of this section within the complete system
 
-Esta sección cumple un rol crítico porque proporciona el contexto experimental en el cual se valida todo el sistema autónomo. Sin un escenario bien definido, los módulos de percepción, decisión y control no tendrían un entorno significativo sobre el cual operar. Aquí se construye precisamente ese entorno: uno que no solo contiene geometría, sino también lógica dinámica y estímulos relevantes para la competencia.
+This section plays a critical role because it provides the experimental context in which the entire autonomous system is validated. Without a well-defined scenario, the perception, decision, and control modules would not have a meaningful environment in which to operate. Here, precisely that environment is built: one that contains not only geometry, but also dynamic logic and stimuli relevant to the competition.
 
-En otras palabras, esta sección materializa el mundo donde se prueba el algoritmo. Gracias a ella, la validación del sistema no se realiza en una escena vacía, sino en un entorno estructurado que incorpora reglas viales, eventos peatonales, obstáculos y elementos de interacción tipo taxi autónomo.
+In other words, this section materializes the world in which the algorithm is tested. Thanks to it, system validation does not take place in an empty scene, but rather in a structured environment that incorporates traffic rules, pedestrian events, obstacles, and autonomous-taxi-style interaction elements.

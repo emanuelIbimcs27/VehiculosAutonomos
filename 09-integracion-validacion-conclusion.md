@@ -1,54 +1,54 @@
 ---
 layout: default
-title: Integración, Validación y Conclusión
+title: Integration, Validation, and Conclusion
 nav_order: 7
 parent: CPS IoT Competition 2026
 permalink: /CPS/integracion-validacion-conclusion/
 ---
 
-# Integración, Validación y Conclusión
+# Integration, Validation, and Conclusion
 
-## 8. Integración funcional del sistema completo
+## 8. Functional integration of the complete system
 
-Una vez desarrollados e incorporados todos los módulos descritos en las secciones anteriores, el sistema final de self-driving quedó constituido como una arquitectura funcional jerárquica capaz de ejecutar navegación autónoma dentro del entorno virtual de la competencia. Esta integración no consistió únicamente en reunir varios scripts independientes, sino en articular una cadena de procesamiento coherente donde cada bloque aporta una función específica dentro del comportamiento total del vehículo.
+Once all the modules described in the previous sections had been developed and incorporated, the final self-driving system was constituted as a hierarchical functional architecture capable of performing autonomous navigation within the virtual competition environment. This integration did not consist merely of gathering several independent scripts, but of articulating a coherent processing chain in which each block contributes a specific function within the overall behavior of the vehicle.
 
-Desde el punto de vista ingenieril, el valor de la integración radica en que el sistema ya no debe analizarse por componentes aislados, sino como un flujo continuo de información y decisión. La planeación global aporta la ruta nominal; la percepción visual detecta objetos relevantes del entorno; la estimación de profundidad agrega significado geométrico a esas detecciones; la lógica reglamentaria y de seguridad interpreta el contexto vial; y finalmente el vehículo modifica su velocidad y dirección de acuerdo con todo ese conjunto de información.
+From an engineering standpoint, the value of integration lies in the fact that the system should no longer be analyzed as a set of isolated components, but rather as a continuous flow of information and decision-making. Global planning provides the nominal route; visual perception detects relevant objects in the environment; depth estimation adds geometric meaning to those detections; traffic-rule and safety logic interprets the road context; and finally the vehicle modifies its speed and steering according to that entire set of information.
 
-En términos generales, la arquitectura integrada puede resumirse como una cadena funcional del tipo:
+In general terms, the integrated architecture can be summarized as a functional chain of the form:
 
 $$
-\text{Mapa} \rightarrow \text{Planeación} \rightarrow \text{Percepción} \rightarrow \text{Profundidad} \rightarrow \text{Decisión} \rightarrow \text{Control}
+\text{Map} \rightarrow \text{Planning} \rightarrow \text{Perception} \rightarrow \text{Depth} \rightarrow \text{Decision} \rightarrow \text{Control}
 $$
 
-No obstante, una vez incorporadas las capas avanzadas del proyecto, esta estructura se vuelve todavía más rica, ya que la etapa de decisión no solo considera señales básicas, sino también direccionales, semáforos, peatones, pickup de pasajero y frenado robusto de seguridad.
+However, once the advanced layers of the project were incorporated, this structure became even richer, since the decision stage no longer considers only basic traffic signs, but also turn signals, traffic lights, pedestrians, passenger pickup, and robust safety braking.
 
-### 8.1 Integración del pipeline base
+### 8.1 Integration of the base pipeline
 
-El flujo principal del sistema se apoya primero en la trayectoria global calculada sobre el grafo del mapa. Si se denota por $P^\star$ la trayectoria óptima, entonces esta se obtiene resolviendo:
+The main system flow first relies on the global trajectory computed over the map graph. If the optimal trajectory is denoted by $P^\star$, then it is obtained by solving:
 
 $$
 P^\star = \arg\min_{P \in \mathcal{P}(s,g)} \sum_{(i,j)\in P} \left(d_{ij} + p_{ij}\right)
 $$
 
-donde:
+where:
 
-- $s$ es el nodo inicial,
-- $g$ es el nodo objetivo,
-- $d_{ij}$ es la distancia geométrica entre nodos,
-- $p_{ij}$ es la penalización asociada a complejidad vial.
+- $s$ is the initial node,
+- $g$ is the goal node,
+- $d_{ij}$ is the geometric distance between nodes,
+- $p_{ij}$ is the penalty associated with road complexity.
 
-La salida de este módulo no se utiliza de forma discreta, sino que se suaviza mediante interpolación PCHIP para obtener una referencia continua:
+The output of this module is not used in discrete form, but is instead smoothed through PCHIP interpolation in order to obtain a continuous reference:
 
 $$
 x_s(\tau)=\operatorname{PCHIP}(t_k,x_k), \qquad
 y_s(\tau)=\operatorname{PCHIP}(t_k,y_k)
 $$
 
-Esta trayectoria suavizada representa el camino nominal que el vehículo debe seguir mientras no exista ningún evento del entorno que obligue a modificarlo.
+This smoothed trajectory represents the nominal path that the vehicle must follow as long as no event in the environment forces it to modify it.
 
-### 8.2 Integración de la percepción visual con la trayectoria
+### 8.2 Integration of visual perception with the trajectory
 
-En paralelo al seguimiento de trayectoria, el sistema recibe imágenes del entorno virtual a través de Simulink y las envía a Python para ejecutar inferencia con el modelo YOLOv8 exportado a ONNX. El detector produce una estructura de hasta diez objetos por frame, cada uno descrito como:
+In parallel with trajectory tracking, the system receives images from the virtual environment through Simulink and sends them to Python in order to run inference with the YOLOv8 model exported to ONNX. The detector produces a structure of up to ten objects per frame, each described as:
 
 $$
 \mathbf{d}_i =
@@ -62,9 +62,9 @@ y_{2,i}
 \end{bmatrix}
 $$
 
-Esta representación constituye la salida básica del módulo de percepción. Sin embargo, todavía no resulta suficiente para tomar decisiones de navegación, ya que el vehículo necesita conocer no solo qué objeto está viendo, sino también a qué distancia se encuentra.
+This representation constitutes the basic output of the perception module. However, it is still not sufficient for navigation decisions, since the vehicle needs to know not only what object it is seeing, but also how far away it is.
 
-Por ello, la salida del detector pasa por la función `addDepth`, donde se convierte en una representación enriquecida:
+For that reason, the detector output passes through the `addDepth` function, where it is transformed into an enriched representation:
 
 $$
 \mathbf{o}_i =
@@ -79,53 +79,53 @@ y_{2,i} \\
 \end{bmatrix}
 $$
 
-donde $\hat{z}_i$ es la profundidad estimada del objeto. Esta transición es clave porque convierte la percepción visual en percepción espacial operativa.
+where $\hat{z}_i$ is the estimated depth of the object. This transition is key because it transforms visual perception into operational spatial perception.
 
-### 8.3 Integración de la lógica reglamentaria
+### 8.3 Integration of rule-based traffic logic
 
-Una vez que las detecciones han sido enriquecidas con profundidad, el sistema puede aplicar lógica vial sobre ellas. En una primera capa se encuentran funciones como `stopLogic`, encargadas de modificar la velocidad del vehículo ante señales básicas como STOP, YIELD y glorieta.
+Once the detections have been enriched with depth, the system can apply road logic to them. In a first layer, functions such as `stopLogic` are found, which are responsible for modifying vehicle speed in response to basic traffic signs such as STOP, YIELD, and roundabout signs.
 
-De forma general, esta etapa puede describirse como una transformación de velocidad nominal:
+In a general form, this stage can be described as a transformation of the nominal speed:
 
 $$
 v_{out}(t) = f(v_{in}(t), \mathbf{o}_i, t)
 $$
 
-donde la salida depende tanto del tipo de objeto detectado como de su distancia, posición relativa y contexto temporal. Por ejemplo, la detección de una señal STOP genera una ventana de detención de cinco segundos, mientras que una glorieta provoca únicamente una reducción de velocidad.
+where the output depends both on the type of detected object and on its distance, relative position, and temporal context. For example, the detection of a STOP sign generates a five-second stopping window, whereas a roundabout sign only causes a speed reduction.
 
-Esta lógica constituye la primera capa de interpretación del entorno y permite que el vehículo responda de manera coherente con reglas básicas de tránsito.
+This logic constitutes the first layer of environment interpretation and allows the vehicle to respond coherently according to basic traffic rules.
 
-### 8.4 Integración de la evasión local de obstáculos
+### 8.4 Integration of local obstacle avoidance
 
-Además de señales, el sistema debe reaccionar ante obstáculos físicos, como el cono colocado en el entorno de la competencia. Para ello, la función `avoidCone` modifica temporalmente la dirección nominal del vehículo mediante una ley senoidal:
+In addition to traffic signs, the system must react to physical obstacles, such as the cone placed in the competition environment. To achieve this, the `avoidCone` function temporarily modifies the nominal vehicle steering through a sinusoidal law:
 
 $$
 \delta_{avoid}(t) = A \sin\left(\frac{2\pi (t-t_0)}{T_{total}}\right)
 $$
 
-donde:
+where:
 
-- $A$ es la amplitud máxima de giro,
-- $T_{total}$ es la duración total de la maniobra,
-- $t_0$ es el instante de activación del esquive.
+- $A$ is the maximum steering amplitude,
+- $T_{total}$ is the total duration of the maneuver,
+- $t_0$ is the activation instant of the avoidance maneuver.
 
-La dirección final queda entonces como:
+The final steering is then expressed as:
 
 $$
 \delta_{out}(t) =
 \begin{cases}
-\delta_{avoid}(t), & \text{si la evasión está activa} \\
-\delta_{in}(t), & \text{en otro caso}
+\delta_{avoid}(t), & \text{if avoidance is active} \\
+\delta_{in}(t), & \text{otherwise}
 \end{cases}
 $$
 
-Este módulo se integra sobre la trayectoria nominal sin necesidad de recalcular toda la ruta global. En términos de arquitectura, esto es importante porque demuestra que el sistema puede resolver eventos locales de manera reactiva sin comprometer la planeación general.
+This module is integrated on top of the nominal trajectory without the need to recompute the entire global path. In architectural terms, this is important because it demonstrates that the system can solve local events reactively without compromising the overall planning.
 
-### 8.5 Integración del comportamiento vial mediante direccionales
+### 8.5 Integration of road behavior through turn signals
 
-Una vez generada la trayectoria global suavizada, también se definieron segmentos específicos donde el vehículo debe encender sus direccionales. Esto se logró proyectando reglas de maniobra entre nodos sobre índices concretos de la trayectoria interpolada.
+Once the smoothed global trajectory has been generated, specific segments were also defined where the vehicle must activate its turn signals. This was achieved by projecting maneuver rules between nodes onto specific indices of the interpolated trajectory.
 
-Si se denota por $\mathcal{P}$ la trayectoria suavizada, entonces los conjuntos:
+If the smoothed trajectory is denoted by $\mathcal{P}$, then the sets:
 
 $$
 \mathcal{S}_{izq} = \{[a_1,b_1], [a_2,b_2], \dots\}
@@ -135,148 +135,148 @@ $$
 \mathcal{S}_{der} = \{[c_1,d_1], [c_2,d_2], \dots\}
 $$
 
-representan los intervalos de la trayectoria donde deben activarse las direccionales izquierda y derecha, respectivamente.
+represent the trajectory intervals where the left and right turn signals must be activated, respectively.
 
-Este módulo es importante porque añade una capa de comportamiento vial expresivo al sistema. Es decir, el vehículo no solo sigue una ruta y evita obstáculos, sino que además comunica visualmente sus maniobras de giro conforme a reglas predefinidas sobre la topología del mapa.
+This module is important because it adds a layer of expressive road behavior to the system. That is, the vehicle not only follows a route and avoids obstacles, but also visually communicates its turning maneuvers according to predefined rules over the topology of the map.
 
-### 8.6 Integración del entorno dinámico en QLabs
+### 8.6 Integration of the dynamic environment in QLabs
 
-Todos los módulos anteriores se validan dentro de un entorno programáticamente generado en QLabs. En este entorno se integran:
+All the previous modules are validated within a programmatically generated environment in QLabs. In this environment, the following are integrated:
 
-- el mapa físico del circuito,
-- los muros y límites,
-- señales de tránsito,
-- pasos peatonales,
-- semáforos dinámicos,
-- una persona estática para simulación de pickup,
-- un peatón dinámico cruzando un paso de cebra,
-- un cono como obstáculo de competencia.
+- the physical map of the circuit,
+- the walls and boundaries,
+- traffic signs,
+- crosswalks,
+- dynamic traffic lights,
+- a static person for pickup simulation,
+- a dynamic pedestrian crossing a crosswalk,
+- a cone as a competition obstacle.
 
-Esto significa que la arquitectura de self-driving no se evalúa en un mundo abstracto o idealizado, sino en un escenario con eventos dinámicos y señales relevantes que exigen reacción contextual. Desde el punto de vista de validación, este entorno es indispensable porque provee los estímulos físicos sobre los cuales se ponen a prueba los módulos de percepción y decisión.
+This means that the self-driving architecture is not evaluated in an abstract or idealized world, but in a scenario with dynamic events and relevant signals that demand contextual reactions. From the validation standpoint, this environment is indispensable because it provides the physical stimuli upon which the perception and decision modules are tested.
 
-### 8.7 Integración de la lógica avanzada de tráfico y seguridad
+### 8.7 Integration of advanced traffic and safety logic
 
-En la etapa final del desarrollo, la lógica básica fue extendida mediante la función `trafficSignsLogic`, que integra en una sola capa decisional:
+In the final development stage, the basic logic was extended through the `trafficSignsLogic` function, which integrates into a single decision layer:
 
 - STOP,
 - YIELD,
-- glorieta,
-- semáforos,
-- persona de pickup,
-- y una bandera externa de frenado peatonal.
+- roundabout,
+- traffic lights,
+- pickup person,
+- and an external pedestrian braking flag.
 
-Adicionalmente, se desarrolló `pedestrianStopLogic`, cuyo propósito es actuar como una capa de seguridad frontal inmediata basada en detección visual, análisis de profundidad y una lógica con histéresis temporal.
+Additionally, `pedestrianStopLogic` was developed, whose purpose is to act as an immediate frontal safety layer based on visual detection, depth analysis, and a logic with temporal hysteresis.
 
-Esto introduce una jerarquía de control muy importante. La seguridad inmediata domina sobre la lógica reglamentaria. En términos de prioridad, la arquitectura final puede entenderse así:
+This introduces a very important control hierarchy. Immediate safety dominates over rule-based traffic logic. In terms of priority, the final architecture can be understood as follows:
 
 $$
-\text{Seguridad frontal inmediata} \;>\; \text{Lógica reglamentaria} \;>\; \text{Seguimiento nominal de trayectoria}
+\text{Immediate frontal safety} \;>\; \text{Rule-based traffic logic} \;>\; \text{Nominal trajectory tracking}
 $$
 
-Esta decisión es correcta desde el punto de vista de diseño de vehículos autónomos, ya que un obstáculo o peatón frente al vehículo debe tener prioridad absoluta sobre cualquier otra consideración operativa.
+This decision is correct from the standpoint of autonomous vehicle design, since an obstacle or pedestrian in front of the vehicle must have absolute priority over any other operational consideration.
 
 ---
 
-## 9. Validación general del sistema
+## 9. General system validation
 
-La validación del sistema se realizó de manera modular e integral. Esto significa que no se evaluó únicamente el comportamiento final del vehículo, sino también el desempeño individual de cada subsistema, con el fin de garantizar que la integración completa se apoyara en componentes previamente verificados.
+System validation was carried out in a modular and integral way. This means that not only the final behavior of the vehicle was evaluated, but also the individual performance of each subsystem, in order to guarantee that the complete integration was supported by previously verified components.
 
-### 9.1 Validación del módulo de planeación
+### 9.1 Validation of the planning module
 
-La planeación global se validó observando que la trayectoria generada a partir del grafo fuera coherente con la topología del mapa y con las restricciones viales introducidas mediante penalizaciones. En particular, se verificó que:
+Global planning was validated by observing that the trajectory generated from the graph was coherent with the topology of the map and with the road constraints introduced through penalties. In particular, it was verified that:
 
-- la ruta óptima conectara correctamente el nodo inicial y el nodo objetivo,
-- el camino elegido evitara tramos innecesariamente costosos desde el punto de vista operativo,
-- la corrección de intersecciones mediante el nodo auxiliar mejorara la geometría local de ciertos cruces,
-- la interpolación PCHIP produjera una curva continua y físicamente seguible por el vehículo.
+- the optimal route correctly connected the initial node and the goal node,
+- the selected path avoided unnecessarily costly segments from an operational standpoint,
+- the correction of intersections through the auxiliary node improved the local geometry of certain crossings,
+- PCHIP interpolation produced a continuous curve that was physically trackable by the vehicle.
 
-La validación visual mediante el plot final de la trayectoria fue especialmente importante, ya que permitió comprobar que la curva roja generada coincidía con la geometría útil del circuito y conservaba continuidad en zonas críticas.
+Visual validation through the final trajectory plot was especially important, since it made it possible to verify that the generated red curve matched the useful geometry of the circuit and preserved continuity in critical areas.
 
-### 9.2 Validación del módulo de percepción
+### 9.2 Validation of the perception module
 
-El detector de objetos se validó tanto cuantitativa como cualitativamente. Cuantitativamente, se analizaron métricas como:
+The object detector was validated both quantitatively and qualitatively. Quantitatively, metrics such as the following were analyzed:
 
-- $\mathrm{mAP}_{50}$,
-- $\mathrm{mAP}_{50:95}$,
-- precisión,
+- $mAP_{50}$,
+- $mAP_{50:95}$,
+- precision,
 - recall.
 
-Estas métricas permitieron comprobar que el modelo entrenado era capaz de reconocer objetos relevantes del entorno con un desempeño suficientemente sólido para el contexto de la competencia.
+These metrics made it possible to verify that the trained model was capable of recognizing relevant objects in the environment with sufficiently solid performance for the competition context.
 
-Cualitativamente, se verificó que el modelo exportado a ONNX siguiera detectando correctamente sobre imágenes del conjunto de prueba y posteriormente en el flujo conectado con Simulink. Este paso fue muy importante, ya que garantizó que el comportamiento del modelo se conservara durante el despliegue y no solo durante el entrenamiento.
+Qualitatively, it was verified that the model exported to ONNX continued to detect correctly on images from the test set and later within the flow connected to Simulink. This step was very important, since it guaranteed that the model behavior was preserved during deployment and not only during training.
 
-### 9.3 Validación del módulo de profundidad
+### 9.3 Validation of the depth module
 
-La función `addDepth` se validó comprobando que las distancias asignadas a las detecciones fueran consistentes con la región física observada en el entorno. Se verificó que:
+The `addDepth` function was validated by checking that the distances assigned to the detections were consistent with the physical region observed in the environment. It was verified that:
 
-- la caja delimitadora se recortara adecuadamente dentro de los límites válidos de la imagen,
-- la región depth asociada al objeto excluyera valores no válidos,
-- la mediana de la región proporcionara una estimación estable de profundidad,
-- el valor centinela 999 se asignara únicamente cuando la profundidad no pudiera medirse de forma confiable.
+- the bounding box was properly cropped within the valid image limits,
+- the depth region associated with the object excluded invalid values,
+- the median of the region provided a stable depth estimate,
+- the sentinel value 999 was assigned only when depth could not be measured reliably.
 
-Esta validación fue importante porque toda la lógica posterior depende directamente de la confiabilidad de $\hat{z}_i$.
+This validation was important because all subsequent logic depends directly on the reliability of $\hat{z}_i$.
 
-### 9.4 Validación de la lógica básica de señales y evasión
+### 9.4 Validation of the basic sign and avoidance logic
 
-Las funciones `stopLogic` y `avoidCone` se validaron observando que:
+The `stopLogic` and `avoidCone` functions were validated by observing that:
 
-- el vehículo se detuviera correctamente durante 5 segundos ante una señal STOP,
-- realizara una pausa breve ante YIELD,
-- redujera la velocidad ante glorietas,
-- activara la maniobra senoidal de evasión cuando un cono se encontrara dentro del umbral especificado.
+- the vehicle stopped correctly for 5 seconds when facing a STOP sign,
+- it performed a brief pause when facing a YIELD sign,
+- it reduced speed when approaching roundabouts,
+- it activated the sinusoidal avoidance maneuver when a cone was within the specified threshold.
 
-Aquí la validación temporal fue especialmente relevante, ya que la correcta duración de las maniobras era tan importante como su activación.
+Here, temporal validation was especially relevant, since the correct duration of the maneuvers was as important as their activation.
 
-### 9.5 Validación de las direccionales
+### 9.5 Validation of the turn signals
 
-El sistema de direccionales se validó proyectando las reglas basadas en nodos sobre la trayectoria suavizada y verificando visualmente que los segmentos verdes y rojos coincidieran con las zonas correctas del mapa.
+The turn signal system was validated by projecting the node-based rules onto the smoothed trajectory and visually verifying that the green and red segments coincided with the correct areas of the map.
 
-Esta validación permitió confirmar que:
+This validation made it possible to confirm that:
 
-- las maniobras de giro estaban correctamente identificadas,
-- el nodo auxiliar central mejoraba la representación de cruces izquierdos,
-- la activación de direccionales cubría todo el tramo de la maniobra y no solo un punto aislado.
+- turning maneuvers were correctly identified,
+- the central auxiliary node improved the representation of left crossings,
+- turn signal activation covered the entire maneuver segment and not just an isolated point.
 
-### 9.6 Validación del entorno dinámico en QLabs
+### 9.6 Validation of the dynamic environment in QLabs
 
-El script de generación del escenario se validó comprobando que todos los actores y elementos del entorno aparecieran correctamente ubicados y se comportaran como se esperaba. En particular se verificó que:
+The scenario generation script was validated by verifying that all actors and environment elements appeared correctly positioned and behaved as expected. In particular, it was verified that:
 
-- el QCar se spawneara en la posición seleccionada,
-- la persona estática apareciera sobre la banqueta,
-- el peatón dinámico cruzara repetidamente el paso peatonal,
-- el cono quedara colocado en la posición prevista,
-- los semáforos cambiaran de estado según el ciclo programado.
+- the QCar spawned at the selected position,
+- the static person appeared on the sidewalk,
+- the dynamic pedestrian repeatedly crossed the crosswalk,
+- the cone was placed in the intended position,
+- the traffic lights changed state according to the programmed cycle.
 
-Esto fue fundamental, ya que sin un entorno reproducible no sería posible validar el resto del sistema de forma consistente.
+This was fundamental, since without a reproducible environment it would not be possible to validate the rest of the system consistently.
 
-### 9.7 Validación de la lógica avanzada de tráfico y seguridad
+### 9.7 Validation of the advanced traffic and safety logic
 
-La capa final de validación consistió en observar el comportamiento del sistema completo frente a eventos combinados. Esto incluyó revisar que:
+The final validation layer consisted of observing the behavior of the complete system under combined events. This included checking that:
 
-- `trafficSignsLogic` integrara correctamente señales, semáforos y pickup,
-- el vehículo se comprometiera a cruzar la intersección solo cuando el semáforo estuviera en verde estable,
-- la rutina de pickup se ejecutara como una secuencia temporal de aproximación y parada,
-- `pedestrianStopLogic` activara el frenado solo después de varios frames consistentes,
-- el frenado se liberara también con histéresis, evitando oscilaciones rápidas.
+- `trafficSignsLogic` correctly integrated traffic signs, traffic lights, and pickup behavior,
+- the vehicle committed to crossing the intersection only when the traffic light was stably green,
+- the pickup routine was executed as a temporal sequence of approach and stop,
+- `pedestrianStopLogic` activated braking only after several consistent frames,
+- braking was also released with hysteresis, avoiding rapid oscillations.
 
-En esta etapa quedó validada la lógica jerárquica completa del sistema.
+At this stage, the complete hierarchical logic of the system was validated.
 
 ---
 
-## 10. Discusión técnica del sistema integrado
+## 10. Technical discussion of the integrated system
 
-El sistema desarrollado demuestra que una arquitectura modular bien diseñada permite construir un comportamiento de self-driving más complejo sin perder trazabilidad ni control sobre cada componente. Cada módulo fue añadido sobre una base previa ya validada, lo cual hizo posible escalar el sistema de manera ordenada.
+The developed system demonstrates that a well-designed modular architecture makes it possible to build a more complex self-driving behavior without losing traceability or control over each component. Each module was added on top of a previously validated foundation, which made it possible to scale the system in an orderly way.
 
-Desde el punto de vista funcional, el proyecto evolucionó desde un seguidor de trayectoria hacia un agente autónomo más completo. Inicialmente la referencia principal era únicamente la ruta calculada. Posteriormente se añadieron señales reglamentarias, luego obstáculos locales, después direccionales, y finalmente capas avanzadas de seguridad y contexto vial. Esta progresión muestra que la arquitectura fue correctamente pensada para admitir crecimiento incremental.
+From the functional standpoint, the project evolved from a simple trajectory follower into a more complete autonomous agent. Initially, the main reference consisted only of the computed route. Later, rule-based signs were added, then local obstacles, then turn signals, and finally advanced layers of safety and road context. This progression shows that the architecture was correctly designed to support incremental growth.
 
-Otro aspecto importante es que el sistema no se limita a una única forma de inteligencia. Combina:
+Another important aspect is that the system is not limited to a single form of intelligence. It combines:
 
-- **planeación algorítmica**, mediante grafos y camino mínimo;
-- **percepción basada en aprendizaje profundo**, mediante YOLOv8;
-- **estimación geométrica**, mediante profundidad;
-- **lógica simbólica**, mediante reglas y máquinas de estados;
-- **seguridad reactiva**, mediante histéresis y gating frontal.
+- **algorithmic planning**, through graphs and shortest path;
+- **deep-learning-based perception**, through YOLOv8;
+- **geometric estimation**, through depth;
+- **symbolic logic**, through rules and state machines;
+- **reactive safety**, through hysteresis and frontal gating.
 
-Precisamente esta combinación de enfoques es lo que hace que el sistema sea técnicamente valioso y digno de presentarse en el contexto de una competencia de self-driving.
+It is precisely this combination of approaches that makes the system technically valuable and worthy of being presented in the context of a self-driving competition.
 
 ---

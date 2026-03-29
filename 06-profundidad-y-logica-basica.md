@@ -1,21 +1,22 @@
 ---
 layout: default
-title: Profundidad, Señales Básicas y Evasión
+title: Depth, Basic Traffic Signs, and Avoidance
 nav_order: 4
 parent: CPS IoT Competition 2026
 permalink: /CPS/profundidad-y-logica-basica/
 ---
-# Profundidad, Señales Básicas y Evasión
 
-## 5. Estimación de profundidad sobre las detecciones: función `addDepth`
+# Depth, Basic Traffic Signs, and Avoidance
 
-El detector de objetos proporciona información bidimensional a partir de imágenes RGB, pero para tomar decisiones de conducción no basta con conocer únicamente la clase del objeto y su localización en el plano de la imagen. En un sistema autónomo también es necesario estimar la distancia real a la que se encuentra cada elemento del entorno. Por esta razón se implementó la función `addDepth`, cuyo objetivo es enriquecer cada detección visual con una estimación robusta de profundidad obtenida a partir del mapa depth asociado a la cámara virtual.
+## 5. Depth estimation over detections: `addDepth` function
 
-Esta función constituye el puente entre la percepción puramente visual y la percepción espacial. Gracias a ella, una detección deja de ser solo un bounding box con clase y confianza, y pasa a convertirse en un objeto con significado geométrico dentro del entorno del vehículo.
+The object detector provides two-dimensional information from RGB images, but in order to make driving decisions it is not enough to know only the class of the object and its location on the image plane. In an autonomous system, it is also necessary to estimate the actual distance at which each element of the environment is located. For this reason, the `addDepth` function was implemented, whose objective is to enrich each visual detection with a robust depth estimate obtained from the depth map associated with the virtual camera.
 
-### 5.1 Objetivo de la función
+This function constitutes the bridge between purely visual perception and spatial perception. Thanks to it, a detection is no longer just a bounding box with class and confidence, but becomes an object with geometric meaning within the vehicle’s environment.
 
-Si el detector entrega, para cada objeto, una estructura del tipo:
+### 5.1 Objective of the function
+
+If the detector outputs, for each object, a structure of the form:
 
 $$
 \mathbf{d}_i =
@@ -29,13 +30,13 @@ y_{2,i}
 \end{bmatrix}
 $$
 
-donde:
+where:
 
-- $c_i$ es la clase detectada,
-- $\rho_i$ es la confianza,
-- $(x_{1,i}, y_{1,i})$ y $(x_{2,i}, y_{2,i})$ son las coordenadas de la caja delimitadora,
+- $c_i$ is the detected class,
+- $\rho_i$ is the confidence,
+- $(x_{1,i}, y_{1,i})$ and $(x_{2,i}, y_{2,i})$ are the bounding box coordinates,
 
-entonces la función `addDepth` transforma esa detección en una estructura enriquecida:
+then the `addDepth` function transforms that detection into an enriched structure:
 
 $$
 \mathbf{o}_i =
@@ -50,9 +51,9 @@ y_{2,i} \\
 \end{bmatrix}
 $$
 
-donde $\hat{z}_i$ representa la profundidad estimada del objeto.
+where $\hat{z}_i$ represents the estimated depth of the object.
 
-### 5.2 Definición de la función
+### 5.2 Function definition
 
 ```matlab
 function out = addDepth(detections, depth)
@@ -61,13 +62,13 @@ function out = addDepth(detections, depth)
 % depth: [480 x 640]
 
 out = zeros(7,10,'single');
-```
+````
 
-La matriz `detections` contiene hasta diez objetos detectados, cada uno con seis atributos. La matriz `depth` almacena la información de profundidad por píxel. La salida `out` añade una séptima fila para guardar la distancia estimada de cada detección válida.
+The `detections` matrix contains up to ten detected objects, each one with six attributes. The `depth` matrix stores the per-pixel depth information. The output `out` adds a seventh row to store the estimated distance of each valid detection.
 
-La inicialización de la salida con ceros y tipo `single` también es importante, ya que mantiene coherencia numérica con el resto del flujo en Simulink y evita gasto innecesario de memoria.
+Initializing the output with zeros and type `single` is also important, since it maintains numerical consistency with the rest of the Simulink flow and avoids unnecessary memory usage.
 
-### 5.3 Código completo
+### 5.3 Full code
 
 ```matlab
 function out = addDepth(detections, depth)
@@ -122,27 +123,27 @@ end
 end
 ```
 
-### 5.4 Selección de la región de interés
+### 5.4 Selection of the region of interest
 
-Para cada detección válida, la función toma la caja delimitadora y extrae la región correspondiente del mapa de profundidad. Matemáticamente, si el bounding box del objeto $i$ se define por:
-
-$$
-B_i = \{(u,v)\;|\; x_{1,i} \le u \le x_{2,i},\ y_{1,i} \le v \le y_{2,i}\}
-$$
-
-entonces la región de interés asociada a profundidad queda dada por:
+For each valid detection, the function takes the bounding box and extracts the corresponding region from the depth map. Mathematically, if the bounding box of object $i$ is defined as:
 
 $$
-\mathcal{R}_i = \{D(u,v)\;|\;(u,v)\in B_i\}
+B_i = {(u,v);|; x_{1,i} \le u \le x_{2,i},\ y_{1,i} \le v \le y_{2,i}}
 $$
 
-donde $D(u,v)$ es la profundidad en el píxel $(u,v)$.
+then the region of interest associated with depth is given by:
 
-A diferencia de estrategias más simples que toman solo el píxel central de la caja, aquí se analiza toda la región. Esto hace que la estimación sea más robusta, ya que una sola muestra central podría corresponder a un hueco del sensor, al fondo o a un valor atípico no representativo del objeto.
+$$
+\mathcal{R}_i = {D(u,v);|;(u,v)\in B_i}
+$$
 
-### 5.5 Saneamiento geométrico de la caja delimitadora
+where $D(u,v)$ is the depth at pixel $(u,v)$.
 
-Antes de extraer la región del mapa depth, la función realiza varias operaciones de saneamiento:
+Unlike simpler strategies that take only the center pixel of the box, here the entire region is analyzed. This makes the estimate more robust, since a single central sample could correspond to a sensor hole, the background, or an outlier not representative of the object.
+
+### 5.5 Geometric sanitization of the bounding box
+
+Before extracting the depth-map region, the function performs several sanitization operations:
 
 ```matlab
 x1 = int32(x1);
@@ -156,15 +157,15 @@ y1 = min(max(y1,1),480);
 y2 = min(max(y2,1),480);
 ```
 
-Estas operaciones tienen un propósito claro. Primero, convierten las coordenadas a enteros, ya que los índices de una matriz deben ser discretos. Después, saturan cada coordenada a los límites válidos de la imagen:
+These operations have a clear purpose. First, they convert the coordinates to integers, since matrix indices must be discrete. Then, each coordinate is saturated to the valid image limits:
 
 $$
 x \in [1,640], \qquad y \in [1,480]
 $$
 
-Esto evita errores de indexación si la detección se encuentra parcialmente fuera del borde de la imagen.
+This prevents indexing errors if the detection lies partially outside the image border.
 
-Además, se verifica que el orden de las coordenadas sea consistente:
+In addition, the code verifies that the coordinate order is consistent:
 
 ```matlab
 if x2 < x1
@@ -175,37 +176,37 @@ if y2 < y1
 end
 ```
 
-Esto asegura que siempre se cumpla:
+This ensures that the following always holds:
 
 $$
 x_{1,i} \le x_{2,i}, \qquad y_{1,i} \le y_{2,i}
 $$
 
-lo cual es indispensable para construir una región rectangular válida.
+which is indispensable for constructing a valid rectangular region.
 
-### 5.6 Filtrado de valores inválidos en profundidad
+### 5.6 Filtering invalid depth values
 
-Una vez obtenida la región de interés, la función elimina valores no válidos:
+Once the region of interest has been obtained, the function removes invalid values:
 
 ```matlab
 roi = roi(~isnan(roi));
 roi = roi(roi > 0);
 ```
 
-Esto significa que la estimación de profundidad se basa únicamente en el conjunto:
+This means that the depth estimate is based only on the set:
 
 $$
 \mathcal{Z}_i =
-\left\{
-D(u,v)\;|\;(u,v)\in B_i,\ D(u,v)>0,\ D(u,v)\neq \text{NaN}
-\right\}
+\left{
+D(u,v);|;(u,v)\in B_i,\ D(u,v)>0,\ D(u,v)\neq \text{NaN}
+\right}
 $$
 
-Este filtrado es necesario porque los mapas depth pueden contener píxeles nulos, huecos o lecturas indefinidas. Si esos valores se usaran directamente, la distancia estimada sería poco confiable y podría disparar decisiones incorrectas en la lógica del vehículo.
+This filtering is necessary because depth maps may contain null pixels, holes, or undefined readings. If those values were used directly, the estimated distance would be unreliable and could trigger incorrect decisions in the vehicle logic.
 
-### 5.7 Uso de la mediana como estimador robusto
+### 5.7 Use of the median as a robust estimator
 
-La distancia final del objeto se calcula como:
+The final distance of the object is computed as:
 
 ```matlab
 if isempty(roi)
@@ -215,60 +216,60 @@ else
 end
 ```
 
-En términos matemáticos:
+In mathematical terms:
 
 $$
 \hat{z}_i =
 \begin{cases}
-\operatorname{median}(\mathcal{Z}_i), & \mathcal{Z}_i \neq \varnothing \\
+\operatorname{median}(\mathcal{Z}_i), & \mathcal{Z}_i \neq \varnothing \
 999, & \mathcal{Z}_i = \varnothing
 \end{cases}
 $$
 
-La mediana fue elegida como estimador robusto porque reduce la influencia de valores extremos. Si dentro de la caja existen píxeles espurios, huecos parciales o zonas del fondo, la mediana sigue proporcionando una medida representativa de la distancia del objeto. Esto es especialmente útil en escenas urbanas simuladas donde las cajas pueden abarcar bordes o regiones mixtas.
+The median was chosen as a robust estimator because it reduces the influence of extreme values. If the box contains spurious pixels, partial holes, or background zones, the median still provides a representative measure of the object’s distance. This is especially useful in simulated urban scenes where the boxes may cover edges or mixed regions.
 
-El valor `999` se usa como centinela para indicar que no fue posible obtener una medición válida. De este modo, la lógica de decisión puede distinguir entre un objeto detectado con profundidad fiable y uno cuya distancia no pudo estimarse correctamente.
+The value `999` is used as a sentinel to indicate that it was not possible to obtain a valid measurement. In this way, the decision logic can distinguish between an object detected with reliable depth and one whose distance could not be estimated correctly.
 
-### 5.8 Salida enriquecida
+### 5.8 Enriched output
 
-Finalmente, la función conserva los seis atributos originales de la detección y agrega la profundidad calculada:
+Finally, the function preserves the six original detection attributes and adds the computed depth:
 
 ```matlab
 out(1:6,i) = detections(:,i);
 out(7,i) = dist;
 ```
 
-Con esto, la salida deja de ser una detección puramente visual y se convierte en una detección con contenido geométrico. Esta transformación es esencial para el resto del sistema, ya que las funciones de STOP, YIELD, semáforo, pickup y evasión toman decisiones en función de la distancia estimada y no únicamente de la presencia visual del objeto.
+With this, the output ceases to be a purely visual detection and becomes a detection with geometric content. This transformation is essential for the rest of the system, since the STOP, YIELD, traffic light, pickup, and avoidance functions make decisions based on the estimated distance and not only on the visual presence of the object.
 
 ---
 
-## 6. Lógica reglamentaria para señales: `stopLogic`
+## 6. Rule-based logic for traffic signs: `stopLogic`
 
-Una vez que las detecciones fueron enriquecidas con distancia, se implementó una lógica reglamentaria básica para que el vehículo pudiera responder a señales del entorno. La función `stopLogic` constituye la primera capa de decisión basada en reglas y se diseñó para atender tres elementos viales principales:
+Once the detections were enriched with distance, a basic traffic-rule logic was implemented so that the vehicle could respond to signs in the environment. The `stopLogic` function constitutes the first rule-based decision layer and was designed to handle three main road elements:
 
-- señales de **STOP**
-- señales de **YIELD**
-- señales de **ROUNDABOUT**
+* **STOP** signs
+* **YIELD** signs
+* **ROUNDABOUT** signs
 
-Su función es modificar la velocidad del vehículo según el tipo de señal detectada, su confianza, su distancia y su posición relativa dentro del campo visual.
+Its function is to modify the vehicle speed according to the type of detected sign, its confidence, its distance, and its relative position within the visual field.
 
-### 6.1 Objetivo de la función
+### 6.1 Objective of the function
 
-La función recibe:
+The function receives:
 
-- una velocidad de entrada `speed_in`
-- la matriz de detecciones enriquecidas
-- el tiempo actual `t`
+* an input speed `speed_in`
+* the matrix of enriched detections
+* the current time `t`
 
-y devuelve una velocidad ajustada:
+and returns an adjusted speed:
 
 $$
-speed\_out = f(speed\_in,\ detections,\ t)
+speed_out = f(speed_in,\ detections,\ t)
 $$
 
-El objetivo es que el vehículo reduzca o anule temporalmente su velocidad cuando se enfrente a señales específicas, siguiendo una jerarquía de prioridades coherente con reglas básicas de tránsito.
+The objective is for the vehicle to reduce or temporarily nullify its speed when facing specific traffic signs, following a priority hierarchy consistent with basic driving rules.
 
-### 6.2 Código completo
+### 6.2 Full code
 
 ```matlab
 function speed_out = stopLogic(speed_in, detections, t)
@@ -363,35 +364,35 @@ end
 end
 ```
 
-### 6.3 Cálculo de frontalidad de la señal
+### 6.3 Computation of sign frontalness
 
-La función no solo analiza la clase, confianza y distancia de la detección, sino también su posición horizontal en la imagen. Para ello calcula el centro horizontal del bounding box:
+The function does not only analyze the class, confidence, and distance of the detection, but also its horizontal position in the image. To do so, it computes the horizontal center of the bounding box:
 
 $$
 c_{x,i} = \frac{x_{1,i} + x_{2,i}}{2}
 $$
 
-y define una condición de frontalidad:
+and defines a frontalness condition:
 
 $$
 |c_{x,i} - 320| < 100
 $$
 
-Aquí 320 representa el centro horizontal de una imagen de ancho 640 píxeles. Esta condición significa que solo se consideran relevantes las señales que aparecen aproximadamente frente al vehículo, descartando aquellas que estén demasiado a la izquierda o a la derecha del campo visual.
+Here, 320 represents the horizontal center of an image with width 640 pixels. This condition means that only signs appearing approximately in front of the vehicle are considered relevant, discarding those that are too far to the left or right of the visual field.
 
-Esta decisión es muy importante porque evita falsos disparos de la lógica por objetos que sí fueron detectados, pero que no pertenecen al carril o a la escena directamente relevante para el movimiento inmediato del vehículo.
+This decision is very important because it avoids false triggers of the logic caused by objects that were indeed detected, but do not belong to the lane or to the scene directly relevant to the immediate movement of the vehicle.
 
-### 6.4 Detección de STOP
+### 6.4 STOP detection
 
-La condición para considerar válida una señal de STOP fue:
+The condition used to consider a STOP sign valid was:
 
 $$
-c_i = 5,\qquad \rho_i > 0.9,\qquad \hat{z}_i < 1.3,\qquad |c_{x,i} - 320| < 100
+c_i = 5,\qquad \rho_i > 0.9,\qquad \hat{z}*i < 1.3,\qquad |c*{x,i} - 320| < 100
 $$
 
-Es decir, el objeto detectado debe pertenecer a la clase STOP, tener alta confianza, encontrarse a menos de 1.3 metros y aparecer frontalmente.
+That is, the detected object must belong to the STOP class, have high confidence, be located at less than 1.3 meters, and appear frontally.
 
-En el código:
+In the code:
 
 ```matlab
 if class_id == 5 && prob > 0.9 && dist < 1.3 && frontal
@@ -399,7 +400,7 @@ if class_id == 5 && prob > 0.9 && dist < 1.3 && frontal
 end
 ```
 
-Cuando esta condición se activa y la rutina no se había ejecutado previamente, la función entra en un estado de parada:
+When this condition is activated and the routine had not yet been executed previously, the function enters a stop state:
 
 ```matlab
 if stop_detected && ~stop_active && ~stop_done
@@ -408,29 +409,29 @@ if stop_detected && ~stop_active && ~stop_done
 end
 ```
 
-La salida del vehículo queda entonces:
+The vehicle output then becomes:
 
 $$
 v_{out}(t) =
 \begin{cases}
-0, & 0 \le t-t_0 < 5 \\
+0, & 0 \le t-t_0 < 5 \
 v_{in}(t), & t-t_0 \ge 5
 \end{cases}
 $$
 
-donde $t_0$ es el instante de activación.
+where $t_0$ is the activation instant.
 
-Esto significa que el vehículo permanece completamente detenido durante 5 segundos, reproduciendo un comportamiento reglamentario claro y verificable.
+This means that the vehicle remains completely stopped for 5 seconds, reproducing a clear and verifiable traffic-rule behavior.
 
-### 6.5 Detección de YIELD
+### 6.5 YIELD detection
 
-La condición para una señal de ceda el paso fue:
+The condition for a yield sign was:
 
 $$
-c_i = 7,\qquad \rho_i > 0.9,\qquad \hat{z}_i < 1.5,\qquad |c_{x,i} - 320| < 100
+c_i = 7,\qquad \rho_i > 0.9,\qquad \hat{z}*i < 1.5,\qquad |c*{x,i} - 320| < 100
 $$
 
-Implementada como:
+Implemented as:
 
 ```matlab
 if class_id == 7 && prob > 0.9 && dist < 1.5 && frontal
@@ -438,29 +439,29 @@ if class_id == 7 && prob > 0.9 && dist < 1.5 && frontal
 end
 ```
 
-Cuando se activa, la función entra en una rutina temporal de espera de 2 segundos:
+When it is activated, the function enters a 2-second waiting routine:
 
 $$
 v_{out}(t) =
 \begin{cases}
-0, & 0 \le t-t_y < 2 \\
+0, & 0 \le t-t_y < 2 \
 v_{in}(t), & t-t_y \ge 2
 \end{cases}
 $$
 
-donde $t_y$ es el instante de activación de YIELD.
+where $t_y$ is the YIELD activation instant.
 
-Este comportamiento refleja una lógica menos severa que STOP, pero suficiente para obligar al vehículo a ceder momentáneamente el paso antes de continuar.
+This behavior reflects a less severe logic than STOP, but still sufficient to force the vehicle to yield momentarily before continuing.
 
-### 6.6 Detección de glorieta
+### 6.6 Roundabout detection
 
-La señal de glorieta se definió con la condición:
+The roundabout sign was defined with the condition:
 
 $$
-c_i = 4,\qquad \rho_i > 0.8,\qquad \hat{z}_i < 2.0,\qquad |c_{x,i} - 320| < 100
+c_i = 4,\qquad \rho_i > 0.8,\qquad \hat{z}*i < 2.0,\qquad |c*{x,i} - 320| < 100
 $$
 
-En código:
+In code:
 
 ```matlab
 if class_id == 4 && prob > 0.8 && dist < 2.0 && frontal
@@ -468,45 +469,45 @@ if class_id == 4 && prob > 0.8 && dist < 2.0 && frontal
 end
 ```
 
-A diferencia de STOP y YIELD, esta señal no obliga al vehículo a detenerse. En su lugar, reduce la velocidad nominal al 50 %:
+Unlike STOP and YIELD, this sign does not require the vehicle to stop. Instead, it reduces the nominal speed to 50%:
 
 $$
-v_{out}(t) = 0.5\,v_{in}(t)
+v_{out}(t) = 0.5,v_{in}(t)
 $$
 
-Esto modela una conducción más prudente en zonas de giro circular, sin interrumpir completamente la marcha.
+This models a more cautious driving behavior in circular-turn zones without fully interrupting motion.
 
-### 6.7 Uso de variables persistentes y memoria de eventos
+### 6.7 Use of persistent variables and event memory
 
-La función utiliza variables persistentes para recordar si una maniobra ya fue activada:
+The function uses persistent variables to remember whether a maneuver has already been activated:
 
 ```matlab
 persistent stop_active t_start stop_done
 persistent yield_active t_yield_start yield_done
 ```
 
-Esto convierte la lógica en una máquina de estados simple, donde el sistema no depende únicamente del frame actual, sino también de su historial reciente. Gracias a ello:
+This turns the logic into a simple state machine, where the system does not depend only on the current frame, but also on its recent history. Thanks to this:
 
-- una señal de STOP no reactiva constantemente la detención mientras permanece visible
-- un YIELD no reinicia su temporización en cada iteración
-- el sistema puede distinguir entre una maniobra ya ejecutada y una señal nueva
+* a STOP sign does not constantly retrigger the stop while it remains visible
+* a YIELD sign does not restart its timer at every iteration
+* the system can distinguish between an already executed maneuver and a new sign
 
-En otras palabras, la lógica no es puramente instantánea, sino temporalmente coherente.
+In other words, the logic is not purely instantaneous, but temporally coherent.
 
-### 6.8 Jerarquía de prioridades
+### 6.8 Priority hierarchy
 
-La función fue diseñada con una jerarquía clara:
+The function was designed with a clear priority hierarchy:
 
 $$
 \text{STOP} > \text{YIELD} > \text{ROUNDABOUT}
 $$
 
-Esto se refleja en el uso de `return` dentro de los bloques de STOP y YIELD. Si el vehículo está ejecutando una parada por STOP, la función sale inmediatamente y no evalúa ninguna otra lógica. Lo mismo ocurre con YIELD antes de llegar a la reducción por glorieta.
+This is reflected in the use of `return` inside the STOP and YIELD blocks. If the vehicle is executing a stop due to STOP, the function exits immediately and does not evaluate any other logic. The same happens with YIELD before reaching the roundabout speed reduction.
 
-Esta decisión es importante porque impone un orden reglamentario coherente: una señal de alto total debe dominar sobre cualquier comportamiento de circulación continua.
+This decision is important because it imposes a coherent rule-based order: a full stop sign must dominate over any continuous driving behavior.
 
-### 6.9 Papel de esta sección dentro del sistema completo
+### 6.9 Role of this section within the complete system
 
-La función `stopLogic` representa la primera capa de decisión reglamentaria del vehículo. Su importancia radica en que transforma detecciones visuales enriquecidas con profundidad en comandos concretos de velocidad. Mientras que el módulo de percepción dice **qué hay en la escena**, esta lógica dice **qué debe hacer el vehículo frente a ello**.
+The `stopLogic` function represents the first rule-based decision layer of the vehicle. Its importance lies in the fact that it transforms visually detected objects enriched with depth into concrete speed commands. While the perception module says **what is present in the scene**, this logic says **what the vehicle should do about it**.
 
-En conjunto con `addDepth`, esta sección marca la transición entre percepción e interpretación. El sistema deja de limitarse a observar objetos en una imagen y empieza a actuar de forma consistente con reglas básicas de conducción.
+Together with `addDepth`, this section marks the transition between perception and interpretation. The system stops being limited to observing objects in an image and begins to act consistently according to basic driving rules.
