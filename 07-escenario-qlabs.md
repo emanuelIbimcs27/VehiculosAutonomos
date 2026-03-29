@@ -68,23 +68,32 @@ function trafficLightController(qlabs)
         t3 = QLabsTrafficLight(qlabs);
         t4 = QLabsTrafficLight(qlabs);
 
+        % intersection 1
+        t1.spawn_id_degrees(1, [0.6, 1.55, 0.006], [0,0,0], [0.1, 0.1, 0.1], 0, false);
+        t2.spawn_id_degrees(2, [-0.6, 1.28, 0.006], [0,0,90], [0.1, 0.1, 0.1], 0, false);
+        t3.spawn_id_degrees(3, [-0.37, 0.3, 0.006], [0,0,180], [0.1, 0.1, 0.1], 0, false);
+        t4.spawn_id_degrees(4, [0.75, 0.48, 0.006], [0,0,-90], [0.1, 0.1, 0.1], 0, false);
+                
         % Referencia al peatón (ID 20)
         hObstacle = QLabsPerson(qlabs);
         hObstacle.actorNumber = 20; 
-
-        % Coordenadas
+        
+        % Coordenadas (Usando las que definiste abajo)
         LOC_A = [1.441, 0.569, 0.005]; 
         LOC_B = [1.441, 0.809, 0.005]; 
         hacia_B = true; 
-
+        
         intersection1Flag = 0;
-
+        
+        % Solo un onCleanup y que sea simple
         clear cleanup;
+        %cleanup = onCleanup(@() disp('Finalizando controlador.'));
         cleanup = onCleanup(@() qlabs.close());
 
         while(true)
             fprintf('Ciclo de semáforo: %d\n', intersection1Flag);
-
+            
+            % Lógica de colores simplificada para evitar errores de referencia
             if intersection1Flag == 0
                 t1.set_color(3); t3.set_color(3); t2.set_color(1); t4.set_color(1);
             elseif intersection1Flag == 1
@@ -97,9 +106,11 @@ function trafficLightController(qlabs)
 
             % Movimiento del peatón
             if hacia_B
+                %hObstacle.move_to(LOC_B, hObstacle.WALK, 1);
                 hObstacle.move_to(LOC_B, 0.3, 1);
                 hacia_B = false;
             else
+                %hObstacle.move_to(LOC_A, hObstacle.WALK, 1);
                 hObstacle.move_to(LOC_A, 0.3, 1);
                 hacia_B = true;
             end
@@ -109,6 +120,7 @@ function trafficLightController(qlabs)
         end
     catch ME
         fprintf('Error en el controlador: %s\n', ME.message);
+        % No cerramos qlabs aquí para poder ver el error en consola
     end
 end
 ```
@@ -232,6 +244,22 @@ myStopSign = QLabsStopSign(qlabs);
 myStopSign.spawn_degrees([-1.5, 3.6, 0.006], ...
                         [0, 0, -35], ...
                         [0.1, 0.1, 0.1], ...
+                        false);  
+
+myStopSign.spawn_degrees([-1.5, 2.2, 0.006], ...
+                        [0, 0, 35], ...
+                        [0.1, 0.1, 0.1], ...
+                        false);
+
+%x+ side
+myStopSign.spawn_degrees([2.410, 0.206, 0.006], ...
+                        [0, 0, -90], ...
+                        [0.1, 0.1, 0.1], ...
+                        false); 
+
+myStopSign.spawn_degrees([1.766, 1.697, 0.006], ...
+                        [0, 0, 90], ...
+                        [0.1, 0.1, 0.1], ...
                         false);
 ```
 
@@ -239,10 +267,35 @@ y los cruces peatonales mediante:
 
 ```matlab
 myCrossWalk = QLabsCrosswalk(qlabs);
-myCrossWalk.spawn_degrees([-2 + x_offset, -1.475 + y_offset, 0.01], ...
-                          [0,0,0], ...
-                          [0.1,0.1,0.075], ...
-                          0);
+myCrossWalk.spawn_degrees   ([-2 + x_offset, -1.475 + y_offset, 0.01], ...
+                            [0,0,0], ...
+                            [0.1,0.1,0.075], ...
+                            0);
+
+myCrossWalk.spawn_degrees   ([-0.5, 0.95, 0.006], ...
+                            [0,0,90], ...
+                            [0.1,0.1,0.075], ...
+                            0);
+
+myCrossWalk.spawn_degrees   ([0.15, 0.32, 0.006], ...
+                            [0,0,0], ...
+                            [0.1,0.1,0.075], ...
+                            0);
+
+myCrossWalk.spawn_degrees   ([0.75, 0.95, 0.006], ...
+                            [0,0,90], ...
+                            [0.1,0.1,0.075], ...
+                            0);
+
+myCrossWalk.spawn_degrees   ([0.13, 1.57, 0.006], ...
+                            [0,0,0], ...
+                            [0.1,0.1,0.075], ...
+                            0);
+
+myCrossWalk.spawn_degrees   ([1.45, 0.95, 0.006], ...
+                            [0,0,90], ...
+                            [0.1,0.1,0.075], ...
+                            0);
 ```
 
 La presencia explícita de estos elementos es clave, ya que el modelo de percepción y la lógica de tránsito del vehículo dependen directamente de ellos. En otras palabras, el escenario fue diseñado para contener exactamente los objetos que el pipeline de self-driving necesita detectar e interpretar.
@@ -252,13 +305,21 @@ La presencia explícita de estos elementos es clave, ya que el modelo de percepc
 ```matlab
 hPersonStatic = QLabsPerson(qlabs);
 
-loc_persona = [-0.424, 4.55, 0.005];
-rot_persona = [0, 0, -90];
-scale_persona = [0.1, 0.1, 0.1];
-id_persona = 10;
-config_persona = 11;
+% Definimos los parámetros según tus coordenadas
+loc_persona = [-0.424, 4.55, 0.005]; % Agregamos un pequeño offset en Z para que no atraviese el suelo
+rot_persona = [0, 0, -90];            % 90 grados para que esté viendo hacia la calle (ajusta si es necesario)
+scale_persona = [0.1, 0.1, 0.1];           % Tamaño normal
+id_persona = 10;                     % Un número de ID único para este actor
+config_persona = 11;                  % Puedes elegir de 0 a 11 para cambiar su apariencia
 
+% Spawneamos a la persona
 hStatus = hPersonStatic.spawn_id_degrees(id_persona, loc_persona, rot_persona, scale_persona, config_persona, true);
+
+if hStatus == 0
+    disp('Persona spawneada con éxito en la banqueta.');
+else
+    disp('Error al spawnear la persona. Revisa la conexión con QLabs.');
+end
 ```
 
 Esta persona estática representa al pasajero que el vehículo debe simular recoger. Su ubicación sobre la banqueta es intencional, ya que obliga al sistema a distinguir entre una persona esperando en un punto de recogida y un peatón cruzando activamente la calle.
@@ -269,10 +330,13 @@ Desde el punto de vista del proyecto, este actor introduce una lógica de alto n
 
 ```matlab
 hPersonObstacle = QLabsPerson(qlabs);
+% Punto A (Banqueta derecha), Punto B (Banqueta izquierda)
 LOC_A_OBSTACULO = [1.441, 0.62, 0.005]; 
 LOC_B_OBSTACULO = [1.441, 0.81, 0.005]; 
 
+% Spawn inicial del obstáculo (ID 20 para no chocar con la otra)
 hPersonObstacle.spawn_id_degrees(20, LOC_A_OBSTACULO, [0, 0, -180], [0.1, 0.1, 0.1], 11, true);
+disp('Persona DINÁMICA lista para cruzar (ID 20).');
 ```
 
 Este peatón es el actor que cruza repetidamente un paso peatonal. Su función es alimentar la lógica de frenado y validación peatonal del vehículo. El hecho de que se le asigne un identificador propio (`ID 20`) permite que el controlador dinámico lo localice y actualice su posición de forma consistente.
@@ -282,11 +346,13 @@ Este peatón es el actor que cruza repetidamente un paso peatonal. Su función e
 ```matlab
 hTrafficCone = QLabsTrafficCone(qlabs);
 
-loc_cone = [2.221, 1.017, 0.25];
+% Configuración según tus coordenadas
+loc_cone = [2.221, 1.017, 0.25]; % Z en 0.25 como recomienda el ejemplo
 rot_cone = [0, 0, 0];
-scale_cone = [0.2, 0.2, 0.2];
+scale_cone = [0.2, 0.2, 0.2]; % Mantengo tu escala pequeña
 id_cone = 101;
 
+% 1. SPAWN (Usando spawn_id_degrees para asegurar el ID)
 hStatusCone = hTrafficCone.spawn_id_degrees(id_cone, loc_cone, rot_cone, scale_cone, 0, true);
 ```
 
