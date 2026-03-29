@@ -168,7 +168,7 @@ donde:
 - $FP$: falsos positivos
 - $FN$: falsos negativos
 
-La métrica $mAP50$ evalúa la precisión media cuando una detección se considera correcta si su intersección sobre unión supera 0.50. La métrica $mAP50\text{-}95$ es más exigente porque promedia el desempeño sobre varios umbrales de IoU, proporcionando una evaluación más robusta de la calidad del detector.
+La métrica $mAP_{50}$ evalúa la precisión media cuando una detección se considera correcta si su intersección sobre unión supera 0.50. La métrica $mAP_{50\text{-}95}$ es más exigente porque promedia el desempeño sobre varios umbrales de IoU, proporcionando una evaluación más robusta de la calidad del detector.
 
 ### 3.8 Prueba cualitativa del modelo exportado
 

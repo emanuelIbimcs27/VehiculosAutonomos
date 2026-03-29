@@ -459,7 +459,7 @@ La figura muestra el mapa de competencia utilizado para construir el grafo del s
 ![Trayectoria global generada para el QCar 2 virtual](/assets/img/MapaVirtualGenerado.jpeg)
 
 **Descripción técnica de la figura.**  
-La línea roja representa la trayectoria global final que seguirá el QCar 2 virtual. Dicha trayectoria se obtuvo resolviendo un problema de optimización sobre el grafo dirigido del mapa y posteriormente suavizando la ruta discreta mediante interpolación PCHIP. La referencia punteada negra corresponde al marco espacial del entorno utilizado como base de calibración.
+La línea roja representa la trayectoria global final que seguiría el QCar 2 virtual dentro del entorno de simulación. Esta trayectoria se obtuvo al resolver un problema de optimización sobre el grafo dirigido del mapa y, posteriormente, suavizar la ruta discreta mediante interpolación PCHIP, con el fin de generar una referencia continua y físicamente más adecuada para el seguimiento del vehículo. Por su parte, la línea punteada negra corresponde al marco espacial del entorno utilizado como base de calibración. Es importante señalar que esta trayectoria se presenta únicamente como un ejemplo de planeación entre el nodo 1 y el nodo 44.
 
 ## Interpretación de esta sección dentro del sistema completo
 
