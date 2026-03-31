@@ -6,7 +6,7 @@ parent: CPS IoT Competition 2026
 permalink: /CPS/parametrizacion-qcar/
 ---
 
-# Virtual QCar 2 Parametrization
+# Virtual QCar 2 Parametrization2
 
 ## 1. Virtual QCar 2 Parametrization and Environment Definition
 
