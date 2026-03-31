@@ -73,11 +73,11 @@ The logic of this block consists of transforming a desired speed into a longitud
 
 ---
 
-## 5. Visual inference and communication block with Python
+## 5. Visual inference and Communication with Python
 
-![Inference block in Simulink](/assets/img/BloqueSimulink3.png)
+![Inference block in Simulink](/assets/img/Comunnication with python script model.png)
 
-**Figure.** Communication subsystem between Simulink and Python to execute inference with the detection model and construct the final object matrix with depth.
+**Figure.** The Communication with Python subsystem handles the interaction between Simulink and a Python script that processes camera frames and performs inference using an image model. Its architecture enables efficient data transmission and reception of inference results for further processing within the Simulink model.
 
 On the left side of this subsystem, the `realsenseRGBImage` signal is received, which corresponds to the RGB frame captured by the camera. According to your explanation, this image first passes through a data type conversion block to ensure that it is in `uint8` format, and afterward through a `reshape` block that transforms it into a row vector. This is done with the objective of packaging the frame and sending it through TCP/IP to the Python script that executes the neural network. The `Model_Input_Stream` block functions as a TCP/IP client in sender mode and, according to your transcriptions, it was configured at the address `tcpip://localhost:18002`, with a large buffer size so that the frames would not arrive truncated, and with a sampling time equal to that of the camera. :contentReference[oaicite:4]{index=4}
 
