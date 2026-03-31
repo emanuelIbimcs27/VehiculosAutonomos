@@ -5,8 +5,7 @@ nav_order: 2
 parent: CPS IoT Competition 2026
 permalink: /CPS/planeacion-global/
 ---
-
-Claro. Aquí tienes **toda esa sección completa en inglés**, sin quitar nada y lista para copiar y pegar. Está basada en el texto que compartiste en tu archivo adjunto. 
+ 
 
 ````markdown id="k3m8vd"
 # Global Trajectory Planning
