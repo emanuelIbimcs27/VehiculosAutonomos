@@ -110,7 +110,7 @@ The resulting data can be used by other subsystems for decision-making and auton
 ## 6. Add distance for object detection
 Once the inference is unpacked, the $6 \times 10$ matrix is passed to the previously described addDepth function to produce a $7 \times 10$ matrix, adding a new row corresponding to the distance of the detected object. This stage requires the depth frame from the RGB-D camera.
 
-![Add distance stage](assets/img/Add%distance%for%object%detection.png)
+![Add distance stage](assets/img/Add%20distance%20for%20object%20detection.png)
 
 **Figure.** Function to get distances using roi.
 
