@@ -1,11 +1,3 @@
----
-layout: default
-title: Depth Estimation, Turn Signal Activation, and Obstacle Avoidance
-nav_order: 4
-parent: CPS IoT Competition 2026
-permalink: /CPS/profundidad-y-logica-basica/
----
-
 # Depth Estimation, Turn Signal Activation, and Obstacle Avoidance
 
 ## 5. Depth estimation over detections: `addDepth` function
@@ -247,17 +239,19 @@ With this, the output ceases to be a purely visual detection and becomes a detec
 
 ## 6. Unified traffic and context logic through `trafficSignsLogic`
 
-Once detections have been enriched with depth, the system applies a higher-level interpretation layer through the function `trafficSignsLogic`. Unlike the earlier basic sign logic, this function no longer handles only isolated signs such as STOP or YIELD, but instead integrates several contextual events into a single decision block. In its current form, the function combines:
+Once detections have been enriched with depth, the system applies a higher-level interpretation layer through the function `trafficSignsLogic`. Unlike earlier implementations that handled isolated traffic signs, this function integrates multiple contextual driving events into a unified decision-making block.
+
+In its current form, the function combines:
 
 * STOP sign logic,
 * YIELD sign logic,
-* roundabout speed reduction,
+* roundabout speed adaptation,
 * pickup-person behavior,
-* traffic light interpretation,
-* and an external pedestrian safety flag.
+* and external safety flags, including pedestrian detection, traffic light stop conditions, and mission completion.
 
-For that reason, `trafficSignsLogic` acts as the main rule-based speed decision layer of the vehicle.
+Rather than directly interpreting traffic lights from perception, the function now relies on an external `traffic_light_flag`, which encapsulates traffic light behavior in a separate module. This separation improves modularity and simplifies the decision hierarchy.
 
+For that reason, `trafficSignsLogic` acts as the main rule-based speed decision layer of the vehicle for all non-lateral behaviors, prioritizing safety-critical events and enforcing structured temporal responses.
 ### 6.1 Objective of the function
 
 The function receives:
@@ -265,7 +259,9 @@ The function receives:
 * a nominal speed `speed_in`,
 * the matrix of detections enriched with depth,
 * the current time `t`,
-* and an external safety flag `pedestrian_flag`.
+* an external safety flag `pedestrian_flag`,
+* a traffic-light stop flag `traffic_light_flag`,
+* and a mission completion flag `finished_flag`.
 
 It returns:
 
@@ -274,43 +270,39 @@ It returns:
 
 Formally:
 
+
 $$
-(speed_out,\ stop_ligth) = f(speed_in,\ detections,\ t,\ pedestrian_flag)
+(speed_{out},\ stop\_ligth) = f(speed_{in},\ detections,\ t,\ pedestrian\_flag,\ traffic\_light\_flag,\ finished\_flag)
 $$
 
-Its objective is for the vehicle to stop, slow down, or continue according to the observed traffic context and safety state.
+Its objective is to regulate the vehicle speed by enforcing stop, slow-down, or continue actions based on the interpreted traffic context and external safety conditions.
 
 ### 6.2 Full code
 
 ```matlab
-function [speed_out, stop_ligth]= trafficSignsLogic(speed_in, detections, t, pedestrian_flag)
+function [speed_out, stop_ligth]= trafficSignsLogic(speed_in, detections, t, pedestrian_flag, traffic_light_flag, finished_flag)
 
 persistent stop_active t_start stop_done
 persistent yield_active t_yield_start yield_done
 persistent person_active t_person_start person_phase person_done
 
-persistent traffic_state % 0 = WAIT, 1 = GO
-persistent green_counter
 
 if isempty(stop_active)
     stop_active = false;
     t_start = 0;
     stop_done = false;
-    
+
     yield_active = false;
     t_yield_start = 0;
     yield_done = false;
-    
+
+    % person
     person_active = false;
     t_person_start = 0;
     person_phase = 0;
     person_done = false;
 end
 
-if isempty(traffic_state)
-    traffic_state = 0;
-    green_counter = 0;
-end
 
 speed_out = speed_in;
 
@@ -320,61 +312,62 @@ round_detected = false;
 person_detected = false;
 stop_ligth = 0;
 
-traffic_red = false;
-traffic_green = false;
-traffic_yellow = false;
-traffic_dist = single(999);
-
 for i = 1:10
-    
+
     class_id = detections(1,i);
     prob     = detections(2,i);
     dist     = detections(7,i);
-    
+
     x1 = detections(3,i);
     x2 = detections(5,i);
     cx = (x1 + x2)/2;
-    
+
     frontal = abs(cx - 320) < 100;
     right_side = cx > 360;
-    
+
+    % STOP
     if class_id == 5 && prob > 0.9 && dist < 1.3 && frontal
         stop_detected = true;
     end
-    
+
+    % YIELD
     if class_id == 7 && prob > 0.9 && dist < 1.5 && frontal
         yield_detected = true;
     end
-    
+
+    % ROUND
     if class_id == 4 && prob > 0.8 && dist < 2.0 && frontal
         round_detected = true;
     end
-    
+
+    % PERSON (right side)
     if class_id == 2 && prob > 0.8 && dist < 7.3 && right_side
         person_detected = true;
     end
 
-    if prob > 0.85 && dist < 3.6 && frontal
-        
-        traffic_dist = dist;
-        
-        if class_id == 3
-            traffic_red = true;
-        elseif class_id == 1
-            traffic_green = true;
-        elseif class_id == 6
-            traffic_yellow = true;
-        end
-    end
-    
 end
 
+
+% PEDESTRIAN STOP (HIGH PRIORITY)
 if pedestrian_flag == 1
     speed_out = 0;
     stop_ligth = 1;
     return;
 end
 
+if finished_flag == 1
+    speed_out = 0;
+    stop_ligth = 1;
+    return;
+end
+
+if traffic_light_flag == 1
+    speed_out = 0;
+    stop_ligth = 1;
+    return;
+end
+
+% STOP
 if stop_detected && ~stop_active && ~stop_done
     stop_active = true;
     stop_ligth = 1;
@@ -396,6 +389,7 @@ if ~stop_detected
     stop_done = false;
 end
 
+% YIELD
 if yield_detected && ~yield_active && ~yield_done
     yield_active = true;
     t_yield_start = t;
@@ -417,6 +411,7 @@ if ~yield_detected
     yield_done = false;
 end
 
+% PERSON (pickup)
 if person_detected && ~person_active && ~person_done
     person_active = true;
     t_person_start = t;
@@ -424,13 +419,15 @@ if person_detected && ~person_active && ~person_done
 end
 
 if person_active
-    
+
     dt = t - t_person_start;
-    
-    if dt < 5
+
+    % Phase 1: move forward
+    if dt < 3
         speed_out = speed_in; 
-        
-    elseif dt < 9
+
+    % Phase 2: stop
+    elseif dt < 6
         speed_out = 0;
         stop_ligth = 1;
     else
@@ -438,44 +435,11 @@ if person_active
         person_done = true;
         stop_ligth = 0;
     end
-    
+
     return;
 end
 
-commit_dist = 1.2;
-
-if traffic_state == 0
-    
-    if traffic_green
-        green_counter = green_counter + 1;
-    else
-        green_counter = 0;
-    end
-    
-    if traffic_red || traffic_yellow
-        speed_out = 0;
-        stop_ligth = 1;
-        return;
-    end
-    
-    if green_counter > 3
-        if traffic_dist < commit_dist
-            traffic_state = 1;
-        end
-    end
-end
-
-if traffic_state == 1
-    
-    speed_out = speed_in;
-    
-    if traffic_dist > 3.5
-        traffic_state = 0;
-        green_counter = 0;
-    end
-    
-end
-
+% ROUND
 if round_detected
     speed_out = 0.5 * speed_in;
 end
@@ -491,11 +455,9 @@ The function uses persistent variables in order to keep temporal memory of previ
 persistent stop_active t_start stop_done
 persistent yield_active t_yield_start yield_done
 persistent person_active t_person_start person_phase person_done
-persistent traffic_state
-persistent green_counter
 ```
 
-This converts the function into a hybrid state machine. It does not react only to the current frame, but also remembers whether a STOP has already been activated, whether a YIELD wait is in progress, whether a pickup maneuver is underway, and whether the traffic light logic is currently in a WAIT or GO state.
+This converts the function into a hybrid state machine. It does not react only to the current frame, but also remembers whether a STOP has already been activated, whether a YIELD wait is in progress, and whether a pickup maneuver is underway.
 
 This temporal memory is essential, because several of the implemented behaviors extend over multiple seconds and cannot be correctly represented with purely instantaneous logic.
 
@@ -524,7 +486,7 @@ $$
 right_side \iff c_x > 360
 $$
 
-The `frontal` condition is used for STOP, YIELD, roundabout, and traffic light interpretation, while the `right_side` condition is used to identify a pickup person standing on the sidewalk. In this way, the same object class may be interpreted differently depending on where it appears in the image.
+The frontal condition is used for STOP, YIELD, and roundabout interpretation, while the right_side condition is used to identify a pickup person standing on the sidewalk. In this way, the same object class may be interpreted differently depending on where it appears in the image.
 
 ### 6.5 STOP logic
 
@@ -618,66 +580,9 @@ and the brake-light flag is activated during the stop.
 
 This creates a realistic sequence in which the vehicle first approaches the passenger and then stops for service.
 
-### 6.9 Traffic light logic and WAIT/GO state machine
+### 6.9 External pedestrian safety flag
 
-Traffic light control is implemented as a two-state machine:
-
-* `traffic_state = 0`: **WAIT**
-* `traffic_state = 1`: **GO**
-
-The function first checks whether the detected traffic light is red, green, or yellow, and stores the approximate traffic-light distance in `traffic_dist`.
-
-A commitment distance is defined as:
-
-```matlab
-commit_dist = 1.2;
-```
-
-#### WAIT state
-
-In the WAIT state, the system requires several stable green frames before crossing:
-
-```matlab
-if traffic_green
-    green_counter = green_counter + 1;
-else
-    green_counter = 0;
-end
-```
-
-Thus, the crossing is committed only if:
-
-$$
-green_counter > 3 \quad \text{and} \quad traffic_dist < 1.2
-$$
-
-If red or yellow is detected in this state, then:
-
-$$
-v_{out}(t) = 0
-$$
-
-and the brake flag is activated.
-
-#### GO state
-
-Once committed, the vehicle ignores subsequent traffic light changes while crossing:
-
-$$
-v_{out}(t) = v_{in}(t)
-$$
-
-The system only returns to WAIT when the vehicle has already passed the intersection and:
-
-$$
-traffic_dist > 3.5
-$$
-
-This avoids unrealistic behavior such as stopping in the middle of the crossing.
-
-### 6.10 External pedestrian safety flag
-
-The first condition checked by the function is the external safety flag:
+Before evaluating any traffic rule, the function checks external safety conditions:
 
 ```matlab
 if pedestrian_flag == 1
@@ -685,11 +590,24 @@ if pedestrian_flag == 1
     stop_ligth = 1;
     return;
 end
+
+if finished_flag == 1
+    speed_out = 0;
+    stop_ligth = 1;
+    return;
+end
+
+if traffic_light_flag == 1
+    speed_out = 0;
+    stop_ligth = 1;
+    return;
+end
 ```
+These conditions have absolute priority over all other behaviors. This ensures that immediate safety constraints, traffic light decisions (handled externally), and mission completion states override rule-based navigation logic.
 
-This means that any frontal safety warning generated by the pedestrian safety layer has absolute priority over all the other behaviors. From the architectural standpoint, this is correct: immediate safety must dominate over traffic-rule interpretation.
+From an architectural standpoint, this enforces a clear hierarchy where safety-critical events dominate over nominal driving behavior.
 
-### 6.11 Functional role of `trafficSignsLogic`
+### 6.10 Functional role of `trafficSignsLogic`
 
 This function is the main context-aware speed decision module of the vehicle. It receives geometric detections enriched with depth and turns them into concrete longitudinal behavior. Unlike the earlier simpler sign logic, `trafficSignsLogic` integrates multiple simultaneous road events into one coherent decision layer.
 
@@ -699,7 +617,7 @@ In practical terms, this function is the one that determines whether the vehicle
 * reduce speed,
 * stop for a fixed time,
 * stop for a pickup maneuver,
-* or stop due to a traffic light or external safety condition.
+* or stop due to external safety condition.
 
 ---
 
