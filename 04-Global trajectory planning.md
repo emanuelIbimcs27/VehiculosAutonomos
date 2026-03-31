@@ -1,14 +1,4 @@
----
-layout: default
-title: Global Career Planning
-nav_order: 2
-parent: CPS IoT Competition 2026
-permalink: /CPS/planeacion-global/
----
- 
 
-````markdown id="k3m8vd"
-# Global Trajectory Planning
 
 ## 2. Global trajectory planning through directed graphs, QLabs map coordinates, and road-related penalties
 
