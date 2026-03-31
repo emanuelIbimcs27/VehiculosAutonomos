@@ -1,10 +1,4 @@
----
-layout: default
-title: Directional Logic on the Trajectory
-nav_order: 6
-parent: CPS IoT Competition 2026
-permalink: /CPS/directionalLogic/
----
+
 ## Turn Signals and Road Behavior
 
 ### Detailed analysis of route segmentation for turn signal activation
