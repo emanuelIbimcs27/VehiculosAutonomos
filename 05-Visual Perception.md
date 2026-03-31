@@ -474,3 +474,21 @@ In validation terms, the turn signal figure demonstrates three important aspects
 ![Trajectory segmentation for turn signals](/assets/img/MapaVirtualDireccionales.jpeg)
 
 **Figure.** Segmentation of the trajectory for turn signal activation. The full route is shown in black, the segments where the left turn signal should be activated appear in green, and the segments where the right turn signal should be activated appear in red. This projection validates the correct correspondence between node-to-node rules and real sections of the smoothed trajectory.
+
+
+## Python Inference Process Management via Simulink Callbacks
+
+In order to enable real-time perception, the system relies on an external Python process responsible for running the deep learning inference pipeline. This process is not executed manually, but instead is fully managed from within Simulink through model callbacks.
+
+At the start of the simulation, a Python script is launched using a system-level command executed via PowerShell. The process is started asynchronously, and its process identifier (PID) is retrieved and stored in the MATLAB workspace. This allows the system to keep a reference to the exact instance of the Python process during runtime.
+
+Formally, the initialization step can be described as:
+
+* launching the Python inference server,
+* retrieving its PID,
+* and storing it for later control.
+
+At the end of the simulation, a termination callback is triggered. In this stage, the stored PID is used to explicitly stop the Python process using a system command. This guarantees that no orphan processes remain running after execution, ensuring proper resource management and avoiding conflicts in subsequent runs.
+
+This mechanism provides a clean and deterministic lifecycle control of the external inference module, enabling seamless integration between Simulink and the Python-based perception system.
+
