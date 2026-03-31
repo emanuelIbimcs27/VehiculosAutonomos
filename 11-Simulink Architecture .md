@@ -118,12 +118,19 @@ Once the inference is unpacked, the $6 \times 10$ matrix is passed to the previo
 ## 7. Active Safety Layer
 For this stage, the inputs are the SteeringCmd from the trajectory controller, the detection matrix, and a clock providing the simulation time. The outputs include stop flags, flags indicating activation of the left turn signal in case of obstacle avoidance, and the modified steering command applied to the vehicle.
 
+This layer includes avoidObstacle and crosswalk_stop Function.
+
 
 ![Collision Avoidance System](assets/img/Active_Safety_Layer.png)
 
-**Figure.** ubsystem integrating obstacle avoidance and emergency stop functions
+**Figure.** subsystem integrating obstacle avoidance and emergency stop functions
 
+## 8. Traffic Signal Decition Safety Layer
+This subsystem includes the trafficSignLogic function, which, as previously explained, is responsible for regulating the vehicle's speed and sending a stop flag. It also includes the trafficLightOnly function, whose role is to embed the stop/go logic for traffic lights. It is important to note that the output speed passes through a saturator block to remove the controller compensator. When controlling speed, this system takes as input stop flags from other complementary systems.
 
+![Traffic Signal System](assets/img/Traffic%20Signal%20Decision%20Layer.png)
+
+**Figure.** subsystem integrating Signal and passenger Events and Traffic Light Decision-Making functions
 
 ## 10. QCar writing block and final actuation
 
