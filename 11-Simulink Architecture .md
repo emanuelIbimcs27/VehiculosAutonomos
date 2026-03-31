@@ -75,17 +75,32 @@ The logic of this block consists of transforming a desired speed into a longitud
 
 ## 5. Visual inference and Communication with Python
 
-![Inference block in Simulink](/assets/img/Comunnication with python script model.png)
+![Inference block in Simulink](/assets/img/Comunnication%20with%20python%20script%20model.png)
 
 **Figure.** The Communication with Python subsystem handles the interaction between Simulink and a Python script that processes camera frames and performs inference using an image model. Its architecture enables efficient data transmission and reception of inference results for further processing within the Simulink model.
 
-On the left side of this subsystem, the `realsenseRGBImage` signal is received, which corresponds to the RGB frame captured by the camera. According to your explanation, this image first passes through a data type conversion block to ensure that it is in `uint8` format, and afterward through a `reshape` block that transforms it into a row vector. This is done with the objective of packaging the frame and sending it through TCP/IP to the Python script that executes the neural network. The `Model_Input_Stream` block functions as a TCP/IP client in sender mode and, according to your transcriptions, it was configured at the address `tcpip://localhost:18002`, with a large buffer size so that the frames would not arrive truncated, and with a sampling time equal to that of the camera. :contentReference[oaicite:4]{index=4}
 
-The second communication block is `InferenceDecoder`, which operates in receiver mode and connects to port `18001`. Its function is to receive from Python the output of the inference model, that is, the list of detected objects with their six attributes: class identifier, probability, \(x_1\), \(y_1\), \(x_2\), and \(y_2\). This information arrives as a fixed vector of 60 elements and is later reorganized with a `reshape` into a 6×10 matrix, where each column represents a detected object. Choosing a fixed size of 6×10 was a very important decision because it simplifies handling in Simulink and avoids the use of dynamic matrices. If there are fewer than ten objects, the remaining columns are filled with zeros. :contentReference[oaicite:5]{index=5}
+Send All Stream Client Quanser Block
 
-On the right side appears the `BuildDetectionMatrix` block, which internally uses the `addDepth` function. The purpose of this block is to take the 6×10 detection matrix and add a seventh row representing the estimated distance of the object. To do this, it uses the bounding box coordinates \((x_1,y_1,x_2,y_2)\) and computes a region of interest within the depth frame (`realsenseDepthImage`). From that region it obtains the distance associated with the detected object. The final result is a 7×10 matrix, which no longer contains only visual information but also geometric content. This enriched matrix is the one that later feeds the traffic logic, obstacle avoidance, and pedestrian braking blocks. :contentReference[oaicite:6]{index=6} :contentReference[oaicite:7]{index=7}
+The send block is configured in Send All mode, communicating with localhost on port 18002. This block transmits RGB camera frames to Python. Before sending, the data is processed as follows:
 
-At the bottom of this same subsystem is the pedestrian braking logic, which you refer to as `AEB Pedestrian Logic`. According to your explanation, this block receives the 7×10 matrix and the depth image, and its function is to distinguish whether the object appearing in front of the car corresponds to a person or to a cone. If it is a cone, then the system does not brake but instead activates the avoidance logic; if it is a person, the block must issue a stop flag that will later be used by the traffic logic. You also explain that at that moment this part was still under fine adjustment, because the objective was to prevent the vehicle from running over the pedestrian within the simulation. :contentReference[oaicite:8]{index=8}
+Conversion to uint8: Each camera frame is normalized to 8-bit integers, ensuring consistent transmission.
+Reshape: The original frame array is reorganized into a column vector $X_{\text{col}} \in \mathbb{R}^{N \times 1}$, where $N$ is the total number of pixels per frame. This operation packages the data into a single linear vector suitable for transmission through the block.
+
+
+Receive All Stream Client Quanser Block
+
+The receive block is configured in Receive All mode on port 18001. Its purpose is to receive inference results generated in Python. Incoming data arrives as a linear vector and must be reconstructed for use in Simulink:
+
+Reshape: The received vector is reorganized into a $6 \times 10$ matrix, $Y \in \mathbb{R}^{6 \times 10}$, representing the structured output of the inference model.
+The resulting data can be used by other subsystems for decision-making and autonomous vehicle control.
+
+
+![Inference block in Simulink](/assets/img/pyhton-simulink.png)
+
+**Figure.** Quanser blocks used to communicate Simulink with a Python script via TCP/IP.
+
+
 
 ---
 
