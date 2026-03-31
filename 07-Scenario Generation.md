@@ -1,11 +1,3 @@
----
-layout: default
-title: QLabs Scenario Generation
-nav_order: 5
-parent: CPS IoT Competition 2026
-permalink: /CPS/escenario-qlabs/
----
-# QLabs Scenario Generation
 
 ## 7. Programmatic generation of the competition scenario in QLabs
 
