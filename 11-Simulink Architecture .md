@@ -3,8 +3,9 @@ layout: default
 title: Simulink Explanation
 nav_order: 9
 parent: CPS IoT Competition 2026
-permalink: /CPS/Simulink/
+permalink: /Methodology/Simulink/
 ---
+
 ## General System Architecture in Simulink
 
 The architecture implemented in Simulink was organized into clearly differentiated functional modules, so that each block was responsible for a specific task within the autonomous driving pipeline of the virtual QCar 2. This modular organization makes it possible to separate sensor acquisition, state estimation, trajectory planning, longitudinal and lateral control, visual perception with external inference in Python, traffic logic, and the final writing of commands to the vehicle. From an engineering perspective, this structure is important because it facilitates the individual validation of each subsystem and allows new functions to be integrated without completely altering the global behavior of the model.

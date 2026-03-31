@@ -1,6 +1,10 @@
-
-
-# Integration, Validation, and Conclusion
+---
+layout: default
+title: Integration, Validation, and Conclusion
+nav_order: 7
+parent: CPS IoT Competition 2026
+permalink: /Methodology/Turn-Signal-Behavior/
+---
 
 ## 8. Functional integration of the complete system
 

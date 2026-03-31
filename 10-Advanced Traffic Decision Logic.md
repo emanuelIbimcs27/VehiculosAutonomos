@@ -1,4 +1,10 @@
-
+---
+layout: default
+title: Advanced Traffic Decision Logic
+nav_order: 8
+parent: CPS IoT Competition 2026
+permalink: /Methodology/Advanced-Traffic/
+---
 
 ## 11. Unified logic for trafficLightOnly Function`
 

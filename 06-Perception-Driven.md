@@ -1,4 +1,10 @@
-# Depth Estimation, Turn Signal Activation, and Obstacle Avoidance
+---
+layout: default
+title: Depth Estimation, Turn Signal Activation, and Obstacle Avoidance
+nav_order: 4
+parent: CPS IoT Competition 2026
+permalink: /Methodology/percepcion-Driven/
+---
 
 ## 5. Depth estimation over detections: `addDepth` function
 

@@ -3,8 +3,9 @@ layout: default
 title: Visual Perception and Simulink-Python Communication
 nav_order: 3
 parent: CPS IoT Competition 2026
-permalink: /CPS/percepcion-y-comunicacion/
+permalink: /Methodology/percepcion-y-comunicacion/
 ---
+
 
 # Visual Perception and Simulink-Python Communication
 

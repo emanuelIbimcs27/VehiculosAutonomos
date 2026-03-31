@@ -1,5 +1,10 @@
-
-## Turn Signals and Road Behavior
+---
+layout: default
+title: Turn Signals and Road Behavior
+nav_order: 6
+parent: CPS IoT Competition 2026
+permalink: /Methodology/Turn-Signal-Behavior/
+---
 
 ### Detailed analysis of route segmentation for turn signal activation
 
