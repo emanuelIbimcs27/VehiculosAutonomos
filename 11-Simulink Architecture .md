@@ -106,15 +106,13 @@ The resulting data can be used by other subsystems for decision-making and auton
 
 ---
 
-## 6. Traffic logic and decision-making
 
-The `traffic signal logic` function is the main rule-based decision layer of the system. According to your transcriptions, this function receives the 7×10 detection matrix, the speed calculated by the controller, and a simulation clock, in addition to the `pedestrian_flag`. The clock is used to measure how much time has passed since an event such as a STOP or a YIELD was detected, thereby making it possible to implement realistic temporal stops within the simulation. :contentReference[oaicite:9]{index=9}
+## 6. Add distance for object detection
+Once the inference is unpacked, the $6 \times 10$ matrix is passed to the previously described addDepth function to produce a $7 \times 10$ matrix, adding a new row corresponding to the distance of the detected object. This stage requires the depth frame from the RGB-D camera.
 
-Internally, the function declares persistent variables to handle states associated with STOP, YIELD, and roundabout logic. It then traverses the detection matrix and validates, for each object, its class, probability, distance, and whether it is being observed frontally. For example, when the detected class corresponds to a STOP sign, the probability is sufficiently high, the distance is small, and the object is in front of the vehicle, then the stopping logic is activated. The same occurs with YIELD, while for roundabout what you do is reduce the speed by multiplying it by a smaller factor so that the vehicle enters more slowly. You also mention that for traffic lights you implemented a kind of persistence or commitment distance: if the car has already seen green and has already committed to crossing, then it continues moving even if yellow or red appears afterward, avoiding stopping in the middle of the intersection. :contentReference[oaicite:10]{index=10}
+![Add distance stage](assets/img/Add%distance%for%object%detection.png)
 
-Another important aspect you explain is that this function operates as a speed *switching* block. That is, under normal conditions it lets the speed coming from the longitudinal controller pass through, but if it detects a condition that requires stopping, it switches that signal to zero. Once the waiting time has elapsed or the condition disappears, it switches back to the controller speed. You also mention that, since side cameras are not available, to simulate passenger pickup you perform a temporal approximation: when the passenger is detected at a certain distance, the system starts counting time and later commands a stop, so that the car stops approximately next to the passenger and not exactly in front of them. :contentReference[oaicite:11]{index=11}
-
-In addition to this logic, you also have the `avoid cone` block, to which you send the same detection matrix, the simulation clock, and the `steering` computed by the controller. When a cone is detected, the steering calculated by the lateral control is switched to a smooth avoidance trajectory, which you describe as a sigmoidal signal so that the avoidance maneuver is not abrupt. If there is no cone, the input steering is simply preserved. You also point out that cone avoidance is always performed to the left, following the overtaking logic on that side, and that this block outputs a `direction` flag that is later used by the lighting system. :contentReference[oaicite:12]{index=12}
+**Figure.** Function to get distances using roi.
 
 ---
 
