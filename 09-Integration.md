@@ -1,10 +1,4 @@
----
-layout: default
-title: Integration, Validation, and Conclusion
-nav_order: 7
-parent: CPS IoT Competition 2026
-permalink: /CPS/integracion-validacion-conclusion/
----
+
 
 # Integration, Validation, and Conclusion
 
