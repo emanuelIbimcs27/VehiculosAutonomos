@@ -1,10 +1,11 @@
 ---
 layout: default
-title: Simulink Explanation
+title: Simulink Architecture
 nav_order: 9
 parent: CPS IoT Competition 2026
 permalink: /Methodology/Simulink/
 ---
+# Simulink Architecture
 
 ## General System Architecture in Simulink
 

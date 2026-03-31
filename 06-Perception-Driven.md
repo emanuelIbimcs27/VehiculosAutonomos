@@ -5,6 +5,7 @@ nav_order: 4
 parent: CPS IoT Competition 2026
 permalink: /Methodology/percepcion-Driven/
 ---
+# Depth Estimation, Turn Signal Activation, and Obstacle Avoidance
 
 ## 5. Depth estimation over detections: `addDepth` function
 

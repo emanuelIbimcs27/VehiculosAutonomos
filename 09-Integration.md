@@ -3,9 +3,9 @@ layout: default
 title: Integration, Validation, and Conclusion
 nav_order: 7
 parent: CPS IoT Competition 2026
-permalink: /Methodology/Turn-Signal-Behavior/
+permalink: /Methodology/Integration/
 ---
-
+# Integration, Validation, and Conclusion
 ## 8. Functional integration of the complete system
 
 Once all the modules described in the previous sections had been developed and incorporated, the final self-driving system was constituted as a hierarchical functional architecture capable of performing autonomous navigation within the virtual competition environment. This integration did not consist merely of gathering several independent scripts, but of articulating a coherent processing chain in which each block contributes a specific function within the overall behavior of the vehicle.

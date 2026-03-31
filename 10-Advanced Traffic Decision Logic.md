@@ -5,6 +5,7 @@ nav_order: 8
 parent: CPS IoT Competition 2026
 permalink: /Methodology/Advanced-Traffic/
 ---
+# Advanced Traffic Decision Logic
 
 ## 11. Unified logic for trafficLightOnly Function`
 

@@ -5,7 +5,7 @@ nav_order: 2
 parent: CPS IoT Competition 2026
 permalink: /Methodology/globaltrajectory/
 ---
-
+# Parameterization of the QCar 2 Virtual
 
 ## 2. Global trajectory planning through directed graphs, QLabs map coordinates, and road-related penalties
 

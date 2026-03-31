@@ -5,7 +5,7 @@ nav_order: 5
 parent: CPS IoT Competition 2026
 permalink: /Methodology/ScenarioGeneration/
 ---
-
+# Scenario Generation
 ## 7. Programmatic generation of the competition scenario in QLabs
 
 In addition to the design of the autonomous driving algorithm, an essential part of the project was the construction of the simulation environment in which the algorithm would be validated. For this purpose, a script was developed to programmatically generate the competition scenario within **QLabs**, incorporating not only the geometric infrastructure of the map, but also dynamic and static elements relevant to the vehicle’s behavior: walls, traffic signs, crosswalks, traffic lights, a static person for pickup simulation, a dynamic pedestrian crossing the street, and a traffic cone as a competition obstacle.
