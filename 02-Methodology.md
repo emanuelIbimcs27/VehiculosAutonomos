@@ -3,7 +3,7 @@ layout: default
 title: CPS IoT Competition 2026
 nav_order: 4
 has_children: true
-permalink: /CPS/
+permalink: /Methodology/
 ---
 
 # Methodology for the Design and Validation of the Self-Driving Algorithm for the CPS IoT Competition 2026
