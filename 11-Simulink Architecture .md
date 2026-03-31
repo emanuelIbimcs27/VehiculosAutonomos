@@ -115,8 +115,17 @@ Once the inference is unpacked, the $6 \times 10$ matrix is passed to the previo
 **Figure.** Function to get distances using roi.
 
 ---
+## 7. Active Safety Layer
+For this stage, the inputs are the SteeringCmd from the trajectory controller, the detection matrix, and a clock providing the simulation time. The outputs include stop flags, flags indicating activation of the left turn signal in case of obstacle avoidance, and the modified steering command applied to the vehicle.
 
-## 7. QCar writing block and final actuation
+
+![Collision Avoidance System](assets/img/Active%20Safety%20Layer.png)
+
+**Figure.** ubsystem integrating obstacle avoidance and emergency stop functions
+
+
+
+## 10. QCar writing block and final actuation
 
 ![writeToQCarDAC Block](/assets/img/BloqueWriteToCar.png)
 
