@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Parameterization of the QCar 2 Virtual
+title: Virtual QCar 2 Parametrization
 nav_order: 1
 parent: CPS IoT Competition 2026
 permalink: /Methodology/parametrizacion-qcar/
