@@ -126,214 +126,182 @@ end
 The function relies on persistent variables (`traffic_state` and `green_counter`) to retain temporal context across frames. This enables the implementation of a stable WAIT/GO state machine, ensuring consistent traffic light interpretation and preventing oscillatory or unsafe decisions near intersections.
 
 
-## 12. Robust safety braking layer based on detection and depth: `pedestrianStopLogic`
+## 12. Robust safety braking layer based on detection and depth: `crosswalk_stop`
 
-To reinforce system safety, a specific function called `pedestrianStopLogic` was implemented. Although it was originally intended for the case of a person crossing, in its current form it functions as a general frontal safety layer, combining visual detection with depth in order to decide whether there is a nearby obstacle in front of the vehicle.
+To reinforce system safety, a specific function called `crosswalk_stop` was implemented. Although it was originally intended for the case of a person crossing, in its current form it functions as a general frontal safety layer, combining visual detection with depth in order to decide whether there is a nearby obstacle in front of the vehicle.
 
 This function is especially important because it introduces an additional verification layer independent of the traffic sign logic. Its role is not to interpret traffic rules, but to protect the vehicle against an immediate risk.
 
 ### 12.1 Full code
 
 ```matlab
-function stop_flag = pedestrianStopLogic(detections, depth_frame)
+function stop_flag = crosswalk_stop(detections)
 
-persistent stop_state counter_on counter_off
+% ========================
+% Memoria persistente
+% ========================
+persistent stop_memory
 
-if isempty(stop_state)
-    stop_state = false;
-    counter_on = 0;
-    counter_off = 0;
+if isempty(stop_memory)
+    stop_memory = 0;
 end
 
-% 1. DETECTION (gating)
-valid_object = false;
+% ========================
+% Parámetros
+% ========================
+PROB_TH = 0.8;
+DIST_TH = 2.0;
 
+ZONA_SEGURA_X_MIN = 350;
+ZONA_SEGURA_X_MAX = 650;
+
+ZONA_RIESGO_X_MAX = 300;
+
+% ========================
+% Iterar objetos
+% ========================
 for i = 1:10
 
-    class_id = detections(1,i);
-    prob     = detections(2,i);
-    dist     = detections(7,i);
+    clase = detections(1,i);
+    prob  = detections(2,i);
+    x1    = detections(3,i);
+    x2    = detections(5,i);
+    dist  = detections(7,i);
 
-    if prob < 0.8 || dist == 0
+    if prob == 0
         continue;
     end
 
-    x1 = detections(3,i);
-    x2 = detections(5,i);
-    cx = (x1 + x2)/2;
-
-    if abs(cx - 320) < 80 && dist < 3.0
-
-        if class_id ~= 0
-            valid_object = true;
-        end
-
+    if clase ~= 2
+        continue;
     end
-end
 
-% 2. ROI IN DEPTH
-roi = depth_frame(200:350, 260:380);
+    if prob < PROB_TH
+        continue;
+    end
 
-% 3. ROBUST PROCESSING
-valid_pixels = roi(roi > 0);
+    % Centro de la caja
+    x_center = (x1 + x2)/2;
 
-if isempty(valid_pixels)
-    obstacle_close = false;
-else
-    d_sorted = sort(valid_pixels(:));
-    idx = max(1, round(0.1 * length(d_sorted)));
-    d_min = d_sorted(idx);
+    % Zonas
+    en_zona_segura = (x_center >= ZONA_SEGURA_X_MIN) && (x_center <= ZONA_SEGURA_X_MAX);
+    en_zona_riesgo = (x_center <= ZONA_RIESGO_X_MAX);
 
-    obstacle_close = d_min < 0.5;
-end
+    % ========================
+    % Memoria
+    % ========================
 
-% 4. HYSTERESIS
-if valid_object && obstacle_close
-    counter_on = counter_on + 1;
-    counter_off = 0;
-else
-    counter_off = counter_off + 1;
-    counter_on = 0;
-end
+    if en_zona_riesgo && dist <= DIST_TH
+        stop_memory = 1;
+    end
 
-% Activate STOP (3 consistent frames)
-if counter_on > 2
-    stop_state = true;
-end
-
-% Release STOP (5 safe frames)
-if counter_off > 4
-    stop_state = false;
-end
-
-% OUTPUT
-stop_flag = stop_state;
+    if en_zona_segura
+        stop_memory = 0;
+    end
 
 end
+
+% ========================
+% Salida final
+% ========================
+stop_flag = stop_memory;
+
+end
+
+
 ```
 
-### 12.2 Phase 1: gating through visual detection
+## 12.2 Phase 1: Detection filtering
 
-The first stage verifies whether there is a visually valid object in the frontal region. The conditions used were:
-
-* confidence $\rho_i \ge 0.8$
-* estimated distance $\hat{z}_i > 0$
-* centered horizontal position:
+The function processes the set of detections to identify valid pedestrian candidates. For each detected object, the following conditions are evaluated:
 
 $$
-|c_{x,i} - 320| < 80
+c_i = 2,\qquad \rho_i > 0.8,\qquad \hat{z}_i \leq 2.0
 $$
 
-* distance less than 3.0 m
-* class different from cone:
+where:
+
+* $c_i$ is the class (pedestrian),
+* $\rho_i$ is the detection confidence,
+* $\hat{z}_i$ is the estimated depth.
+
+Only detections satisfying these constraints are considered for further analysis.
+
+---
+
+## 12.3 Phase 2: Spatial classification
+
+For each valid pedestrian detection, the horizontal position is computed as:
 
 $$
-c_i \neq 0
+x_c = \frac{x_1 + x_2}{2}
 $$
 
-Together:
+Based on this value, the pedestrian is classified into two spatial regions:
+
+* **Risk zone:**
 
 $$
-\rho_i \ge 0.8,\qquad \hat{z}*i > 0,\qquad |c*{x,i}-320|<80,\qquad \hat{z}_i<3.0,\qquad c_i \neq 0
+x_c \leq 300
 $$
 
-If at least one detection satisfies these conditions, the variable `valid_object` is activated. This filters the problem down to objects that are plausibly relevant in front of the vehicle.
-
-### 12.3 Phase 2: spatial validation through a depth ROI
-
-Once visual evidence exists, the function analyzes a fixed region of the depth map:
-
-```matlab
-roi = depth_frame(200:350, 260:380);
-```
-
-This region corresponds approximately to a lower-central window of the image, that is, the zone of space directly in front of the vehicle where an imminent obstacle would be most dangerous.
-
-If we define:
+* **Safe zone:**
 
 $$
-\mathcal{R} = {D(u,v);|; 200 \le u \le 350,\ 260 \le v \le 380,\ D(u,v) > 0}
+350 \leq x_c \leq 650
 $$
 
-then the spatial decision is made only from that subset of valid pixels of the depth map.
+The risk zone corresponds to pedestrians entering or crossing the vehicle’s path, while the safe zone represents pedestrians that have already cleared the lane.
 
-### 12.4 Use of the 10th percentile as a robust estimator
+---
 
-Instead of using the absolute minimum depth, the function sorts the values and takes the 10th percentile:
+## 12.4 Phase 3: Temporal memory activation
 
-```matlab
-d_sorted = sort(valid_pixels(:));
-idx = max(1, round(0.1 * length(d_sorted)));
-d_min = d_sorted(idx);
-```
+A persistent memory variable `stop_memory` is used to retain the stop condition across frames.
 
-This is equivalent to estimating:
+The stop condition is activated when a pedestrian is detected within the risk zone and within a critical distance:
 
 $$
-d_{10%} = Q_{0.10}(\mathcal{R})
+x_c \leq 300 \quad \text{and} \quad \hat{z}_i \leq 2.0
 $$
 
-where $Q_{0.10}$ is the 10th quantile. This decision is very appropriate because it avoids a single spurious pixel, unrealistically close, from triggering a false braking event. The 10th percentile remains sensitive to nearby obstacles, but is much more robust than taking the raw minimum.
-
-An obstacle is then considered close if:
+Under this condition:
 
 $$
-d_{10%} < 0.5
+stop\_memory = 1
 $$
 
-### 12.5 Temporal hysteresis
+This ensures that the vehicle reacts immediately to pedestrians entering its path.
 
-Braking activation does not depend on a single instantaneous observation, but on a logic with temporal hysteresis. Two counters are used:
+---
 
-* `counter_on`: number of consecutive frames with obstacle evidence
-* `counter_off`: number of consecutive frames without obstacle evidence
+## 12.5 Phase 4: Release condition
 
-The logic is:
-
-```matlab
-if valid_object && obstacle_close
-    counter_on = counter_on + 1;
-    counter_off = 0;
-else
-    counter_off = counter_off + 1;
-    counter_on = 0;
-end
-```
-
-The system activates the STOP state when:
+The stop condition is cleared only when the pedestrian reaches the safe zone:
 
 $$
-counter_on > 2
+350 \leq x_c \leq 650
 $$
 
-that is, after three consistent risk frames. And it releases the STOP state when:
+Under this condition:
 
 $$
-counter_off > 4
+stop\_memory = 0
 $$
 
-that is, after five consecutive safe frames.
+This guarantees that the vehicle remains stopped until the pedestrian has fully cleared the crossing area.
 
-This hysteresis reduces the effect of noise and avoids rapid oscillations between braking and moving forward.
+---
 
-### 12.6 Module output and coupling with the main logic
+## 12.6 Phase 5: Output decision
 
-The final result is:
+The final output of the function is defined as:
 
-```matlab
-stop_flag = stop_state;
-```
+$$
+stop\_flag = stop\_memory
+$$
 
-This flag is connected as an input to `trafficSignsLogic`, where it has the highest priority. As a consequence, the decision architecture is hierarchically organized as follows:
-
-1. `pedestrianStopLogic` evaluates immediate frontal risk
-2. if risk is detected, it emits `stop_flag = 1`
-3. `trafficSignsLogic` receives that flag and commands the vehicle to stop before considering any other rule
-
-This design is correct from the safety standpoint, because it clearly separates two levels of decision-making:
-
-* a layer of **immediate reactive safety**
-* a layer of **regulatory and contextual behavior**
+This design introduces temporal consistency into the system, preventing oscillations due to noisy detections and ensuring a robust and realistic stopping behavior in crosswalk scenarios.
 
 ## Role of this section within the complete system
 
