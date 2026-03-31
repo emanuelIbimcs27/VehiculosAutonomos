@@ -119,7 +119,7 @@ Once the inference is unpacked, the $6 \times 10$ matrix is passed to the previo
 For this stage, the inputs are the SteeringCmd from the trajectory controller, the detection matrix, and a clock providing the simulation time. The outputs include stop flags, flags indicating activation of the left turn signal in case of obstacle avoidance, and the modified steering command applied to the vehicle.
 
 
-![Collision Avoidance System](assets/img/Active%20Safety%20Layer.png)
+![Collision Avoidance System](assets/img/Active_Safety_Layer.png)
 
 **Figure.** ubsystem integrating obstacle avoidance and emergency stop functions
 
