@@ -96,7 +96,7 @@ Reshape: The received vector is reorganized into a $6 \times 10$ matrix, $Y \in 
 The resulting data can be used by other subsystems for decision-making and autonomous vehicle control.
 
 
-![Inference block in Simulink](/assets/img/pyhton-simulink.png)
+![Quanser Communication blocks](assets/img/python-simulink.png)
 
 **Figure.** Quanser blocks used to communicate Simulink with a Python script via TCP/IP.
 
