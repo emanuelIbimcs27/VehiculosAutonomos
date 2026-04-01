@@ -142,7 +142,7 @@ The next layer of the algorithm handles the processing of stop signals and left 
 
 ## 10. QCar writing block and final actuation
 
-![writeToQCarDAC Block](/assets/img/writte%20car.png)
+![writeToQCarDAC Block](/assets/img/writte%20qcar.png)
 
 **Figure.** `writeToQCarDAC` block, responsible for applying the motor, steering, and lighting commands to the vehicle.
 
