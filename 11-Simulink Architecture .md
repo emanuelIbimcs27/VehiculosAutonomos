@@ -132,9 +132,17 @@ This subsystem includes the trafficSignLogic function, which, as previously expl
 
 **Figure.** subsystem integrating Signal and passenger Events and Traffic Light Decision-Making functions
 
+
+## 9. Traffic Light  Layer
+The next layer of the algorithm handles the processing of stop signals and left turn signal events detected along the path. Combined with the previously obtained segments, these signals allow precise instructions to be sent for activating the left or right turn signals, or the stop light. It is important to note that the block receiving these signals, called LED Strip (from the Quanser library), is configured in individual mode. Additionally, it is recommended to set this block with a Sample Time of 0.02 s to clearly visualize the turn signal activation in QLabs.
+
+![left and right turn signals stop light System](assets/img/Traffic%20Light%20Layer.png)
+
+**Figure.** Vehicle light processing layer
+
 ## 10. QCar writing block and final actuation
 
-![writeToQCarDAC Block](/assets/img/BloqueWriteToCar.png)
+![writeToQCarDAC Block](/assets/img/writte%20car.png)
 
 **Figure.** `writeToQCarDAC` block, responsible for applying the motor, steering, and lighting commands to the vehicle.
 
