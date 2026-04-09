@@ -7,7 +7,7 @@ This repository documents the development of our autonomous driving algorithm fo
 We are currently in the **virtual stage**, where the main objective is to validate our perception system and state estimation before moving to the full implementation of the autonomous navigation algorithm.
 
 
-## YouTube demonstration video
+## YouTube demonstration video.
 This link provides the algorithm’s demonstration video and an explanation of its overall operating principle:
 https://youtu.be/3_2REVU7KRQ
 
