@@ -16,18 +16,18 @@ For this, we used a YOLO nano model which we trained using labeled images captur
 640 pixels image size
 batch 32
 
-![Load Model & Training](/assets/img/BloqueReadSensor.png)
+![Load Model & Training](/assets/img/Model_Load_Train.png)
 
 When the training was finalized we got the following metrics:
 
-![Training Performance](/assets/img/BloqueReadSensor.png)
+![Training Performance](/assets/img/Model_Training_Plots.png)
 
 This got us the following R values for each object
 
-![R values](/assets/img/BloqueReadSensor.png)
+![R values](/assets/img/Training_Values.png)
 
 ## Model test
 
-![Test image with bounding boxes for objects detected](/assets/img/BloqueReadSensor.png)
+![Test image with bounding boxes for objects detected](/assets/img/Model_Test_Boxes.png)
 
 ## Model implementation
